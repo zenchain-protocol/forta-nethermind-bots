@@ -87,7 +87,7 @@ let lastExecutedMinute = 0;
 export const BOT_ID =
   "0x1a69f5ec8ef436e4093f9ec4ce1a55252b7a9a2d2c386e3f950b79d164bc99e0";
 
-const DATABASE_URL = "https://research.forta.network/database/bot/";
+const DATABASE_URL = process.env.REDIS_URL || "";
 
 const DATABASE_OBJECT_KEYS = {
   transfersKey: "nm-native-icephishing-bot-objects-v7",

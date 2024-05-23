@@ -3,8 +3,8 @@ import { readFileSync } from "fs";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-const hasLocalNode = process.env.hasOwnProperty("LOCAL_NODE");
-const OWNER_DB = "https://research.forta.network/database/owner/";
+const hasLocalNode = process.env.LOCAL_NODE;
+const OWNER_DB = process.env.REDIS_URL;
 
 export type apiKeys = {
   apiKeys: {

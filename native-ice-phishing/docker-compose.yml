@@ -1,0 +1,38 @@
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  native-ice-phishing-detection-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: native-ice-phishing-detection-bot
+    environment:
+      - LOCAL_NODE=false
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: test-runner
+    environment:
+      - LOCAL_NODE=false
+      - NODE_ENV=test
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    command: ["npm", "test"]
+
+volumes:
+  redis-data:

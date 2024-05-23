@@ -12,7 +12,7 @@ export class PersistenceHelper {
   }
 
   async persist(value: any, key: string) {
-    const hasLocalNode = process.env.hasOwnProperty("LOCAL_NODE");
+    const hasLocalNode = process.env.LOCAL_NODE;
     if (!hasLocalNode) {
       const token = await fetchJwt({});
 
@@ -45,7 +45,7 @@ export class PersistenceHelper {
   }
 
   async load(key: string) {
-    const hasLocalNode = process.env.hasOwnProperty("LOCAL_NODE");
+    const hasLocalNode = process.env.LOCAL_NODE;
     if (!hasLocalNode) {
       const token = await fetchJwt({});
       const headers = { Authorization: `Bearer ${token}` };
