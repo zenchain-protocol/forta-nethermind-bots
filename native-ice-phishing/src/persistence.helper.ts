@@ -1,8 +1,7 @@
 import * as dotenv from "dotenv";
 dotenv.config();
-import { fetchJwt } from "forta-agent";
 import fetch from "node-fetch";
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { getSecrets, apiKeys } from "./storage";
 
 export class PersistenceHelper {
   databaseUrl;
@@ -12,91 +11,53 @@ export class PersistenceHelper {
   }
 
   async persist(value: any, key: string) {
-    const hasLocalNode = process.env.LOCAL_NODE;
-    if (!hasLocalNode) {
-      const token = await fetchJwt({});
+    const apiKeys = (await getSecrets()) as apiKeys;
+    const headers = {
+      Authorization: `Basic ${apiKeys.generalApiKeys.REDIS_BASIC_AUTH}`,
+    };
+    try {
+      const response = await fetch(`${this.databaseUrl}/SET/${key}`, {
+        method: "PUT",
+        headers: headers,
+        body: JSON.stringify(value),
+      });
 
-      const headers = { Authorization: `Bearer ${token}` };
-      try {
-        const response = await fetch(`${this.databaseUrl}${key}`, {
-          method: "POST",
-          headers: headers,
-          body: JSON.stringify(value),
-        });
-
-        if (response.ok) {
-          if (key.includes("alerted")) {
-            console.log("successfully persisted addresses to database");
-          } else {
-            console.log("successfully persisted transfers to database");
-          }
-          return;
-        } else {
-          console.log(response.status, response.statusText);
-        }
-      } catch (e) {
-        console.log(`failed to persist value to database. Error: ${e}`);
+      if (response.ok) {
+        console.log(`Successfully persisted data to key: ${key}`);
+        return;
+      } else {
+        console.log(
+          `Failed to persist data. Status: ${response.status}, Status Text: ${response.statusText}`
+        );
       }
-    } else {
-      // Persist locally
-      writeFileSync(key, JSON.stringify(value));
-      return;
+    } catch (e) {
+      console.log(`Failed to persist value to database. Error: ${e}`);
     }
   }
 
   async load(key: string) {
-    const hasLocalNode = process.env.LOCAL_NODE;
-    if (!hasLocalNode) {
-      const token = await fetchJwt({});
-      const headers = { Authorization: `Bearer ${token}` };
-      try {
-        const response = await fetch(`${this.databaseUrl}${key}`, { headers });
+    const apiKeys = (await getSecrets()) as apiKeys;
+    const headers = {
+      Authorization: `Basic ${apiKeys.generalApiKeys.REDIS_BASIC_AUTH}`,
+    };
+    try {
+      const response = await fetch(`${this.databaseUrl}/GET/${key}.bin`, {
+        headers,
+      });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (key.includes("alerted")) {
-            console.log("successfully fetched addresses from database");
-          } else {
-            console.log("successfully fetched transfers from database");
-          }
-          return data;
-        } else {
-          console.log(
-            `${key} has no database entry`,
-            response.status,
-            response.statusText
-          );
-          // If this is the first bot instance that is deployed,
-          // the database will not have data to return,
-          // thus return zero to assign value to the variables
-          // necessary
-          if (key.includes("alerted")) {
-            return [];
-          }
-          return {};
-        }
-      } catch (e) {
-        console.log(`Error in fetching data.`);
-        throw e;
-      }
-    } else {
-      // Checking if it exists locally
-      if (existsSync(key)) {
-        let data;
-        data = JSON.parse(readFileSync(key).toString());
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`Successfully fetched data from key: ${key}`);
         return data;
       } else {
-        console.log(`file ${key} does not exist`);
-
-        // If this is the first bot instance that is deployed,
-        // the database will not have data to return,
-        // thus return zero to assign value to the variables
-        // necessary
-        if (key.includes("alerted")) {
-          return [];
-        }
-        return {};
+        console.log(
+          `Failed to fetch data. Key: ${key}, Status: ${response.status}, Status Text: ${response.statusText}`
+        );
+        return key.includes("alerted") ? [] : {};
       }
+    } catch (e) {
+      console.log(`Error in fetching data. Error: ${e}`);
+      throw e;
     }
   }
 }

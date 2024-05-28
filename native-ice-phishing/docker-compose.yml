@@ -7,19 +7,35 @@ services:
     volumes:
       - redis-data:/data
 
+  webdis:
+    image: nicolas/webdis:latest
+    command: /usr/local/bin/webdis /webdis/webdis.json
+    volumes:  # mount volume containing the config file
+      - ./webdis:/webdis
+    container_name: webdis
+    ports:
+      - "7379:7379"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
   native-ice-phishing-detection-bot:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: native-ice-phishing-detection-bot
     environment:
-      - LOCAL_NODE=false
+      - LOCAL_NODE=true
       - NODE_ENV=production
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6379/
     ports:
       - "3000:3000"
     depends_on:
-      - redis
+      - webdis
+    secrets:
+      - api_keys
 
   test-runner:
     build:
@@ -27,12 +43,18 @@ services:
       dockerfile: Dockerfile.test
     container_name: test-runner
     environment:
-      - LOCAL_NODE=false
+      - LOCAL_NODE=true
       - NODE_ENV=test
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6379/
     depends_on:
       - redis
     command: ["npm", "test"]
+    secrets:
+      - api_keys
 
 volumes:
   redis-data:
+
+secrets:
+  api_keys:
+    file: ./secrets.json
