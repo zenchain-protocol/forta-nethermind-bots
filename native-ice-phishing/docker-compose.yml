@@ -30,6 +30,7 @@ services:
       - LOCAL_NODE=true
       - NODE_ENV=production
       - REDIS_URL=redis://redis:6379/
+      - SECRETS_FILE_PATH=/run/secrets/api_keys
     ports:
       - "3000:3000"
     depends_on:
@@ -46,6 +47,7 @@ services:
       - LOCAL_NODE=true
       - NODE_ENV=test
       - REDIS_URL=redis://redis:6379/
+      - SECRETS_FILE_PATH=/run/secrets/api_keys
     depends_on:
       - redis
     command: ["npm", "test"]

@@ -84,9 +84,7 @@ let isInitialized = false;
 let lastTimestamp = 0;
 let lastExecutedMinute = 0;
 
-export const BOT_ID =
-  "0x1a69f5ec8ef436e4093f9ec4ce1a55252b7a9a2d2c386e3f950b79d164bc99e0";
-
+export const BOT_ID = process.env.BOT_ID || "";
 const DATABASE_URL = process.env.REDIS_URL || "";
 
 const DATABASE_OBJECT_KEYS = {

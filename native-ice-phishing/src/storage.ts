@@ -2,6 +2,8 @@ import { readFileSync } from "fs";
 import * as dotenv from "dotenv";
 dotenv.config();
 
+const secrets_file_path = process.env.SECRETS_FILE_PATH || "";
+
 export type apiKeys = {
   apiKeys: {
     nativeIcePhishing: {
@@ -22,6 +24,6 @@ export type apiKeys = {
 };
 
 export const getSecrets = async (): Promise<object> => {
-  const data = readFileSync("/run/secrets/api_keys", "utf8");
+  const data = readFileSync(secrets_file_path, "utf8");
   return JSON.parse(data) as apiKeys;
 };

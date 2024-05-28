@@ -33,7 +33,7 @@ import { PersistenceHelper } from "./persistence.helper";
 
 jest.setTimeout(400000);
 
-const REAL_DATABASE_URL = "https://research.forta.network/database/bot/";
+const REAL_DATABASE_URL = process.env.REDIS_URL || "";
 const REAL_DATABASE_OBJECT_KEYS = {
   transfersKey: "nm-native-icephishing-bot-objects-v7",
   alertedAddressesKey: "nm-native-icephishing-bot-objects-v2-alerted",
