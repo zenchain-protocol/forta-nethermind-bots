@@ -30,6 +30,34 @@ import calculateAlertRate, { ScanCountType } from "bot-alert-rate";
 import { Data, Transfer, WITHDRAW_SIG } from "./utils";
 import DataFetcher from "./fetcher";
 import { PersistenceHelper } from "./persistence.helper";
+import axios from "axios";
+
+// TODO: Remove this after tests are passing
+axios.interceptors.response.use(function (response: any) {
+    // Optional: Do something with response data
+    return response;
+  }, function (error: any) {
+    // Do whatever you want with the response error here:
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.log(error.request);
+      console.log(error.response.data);
+      console.log(error.response.status);
+      console.log(error.response.headers);
+    } else if (error.request) {
+      // The request was made but no response was received
+      // `error.request` is an instance of XMLHttpRequest in the browser 
+      // and an instance of http.ClientRequest in node.js
+      console.log(error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.log('Error', error.message);
+    }
+    // But, be SURE to return the rejected promise, so the caller still has 
+    // the option of additional specialized handling at the call-site:
+    return Promise.reject(error);
+  });
 
 jest.setTimeout(400000);
 
