@@ -1,4 +1,4 @@
-import { Finding } from "forta-agent";
+import { Finding } from "@fortanetwork/forta-bot";
 
 class ErrorCache {
   private static errors: Finding[] = [];

@@ -2,15 +2,14 @@ import {
   Finding,
   TransactionEvent,
   ethers,
-  getEthersProvider,
   FindingSeverity,
   Initialize,
   getAlerts,
   AlertQueryOptions,
-  AlertsResponse,
   BlockEvent,
   Alert,
-} from "forta-agent";
+  AlertQueryResponse,
+} from "@fortanetwork/forta-bot";
 import { ScanCountType } from "bot-alert-rate";
 import calculateAlertRate from "bot-alert-rate";
 import DataFetcher from "./fetcher";
@@ -151,15 +150,12 @@ const getPastAlertsOncePerDay = async () => {
 
 let dataFetcher: DataFetcher;
 
-export async function createNewDataFetcher(
-  provider: ethers.providers.Provider
-): Promise<DataFetcher> {
+export async function createNewDataFetcher(): Promise<DataFetcher> {
   const apiKeys = (await getSecrets()) as apiKeys;
-  return new DataFetcher(provider, apiKeys);
+  return new DataFetcher(apiKeys);
 }
 
 export const provideInitialize = (
-  provider: ethers.providers.Provider,
   persistenceHelper: PersistenceHelper,
   storedData: Data,
   databaseKeys: {
@@ -167,26 +163,23 @@ export const provideInitialize = (
     alertedAddressesKey: string;
     alertedAddressesCriticalKey: string;
   },
-  getAlerts: (query: AlertQueryOptions) => Promise<AlertsResponse>,
-  dataFetcherCreator: (
-    provider: ethers.providers.Provider
-  ) => Promise<DataFetcher>
+  getAlerts: (query: AlertQueryOptions) => Promise<AlertQueryResponse>,
+  dataFetcherCreator: () => Promise<DataFetcher>
 ): Initialize => {
   return async () => {
-    dataFetcher = await dataFetcherCreator(provider);
+    dataFetcher = await dataFetcherCreator();
 
     const ZETTABLOCK_API_KEY = ((await getSecrets()) as apiKeys).generalApiKeys
       .ZETTABLOCK[0];
 
     process.env["ZETTABLOCK_API_KEY"] = ZETTABLOCK_API_KEY;
-    ({ chainId } = await provider.getNetwork());
 
     //  Optimism, Fantom & Avalanche not yet supported by bot-alert-rate package
-    isRelevantChain = [10, 250, 43114].includes(Number(chainId));
+    isRelevantChain = [10, 250, 43114].includes(Number(process.env.CHAIN_ID));
 
-    databaseKeys.transfersKey += `-${chainId}`;
-    databaseKeys.alertedAddressesKey += `-${chainId}`;
-    databaseKeys.alertedAddressesCriticalKey += `-${chainId}`;
+    databaseKeys.transfersKey += `-${process.env.CHAIN_ID}`;
+    databaseKeys.alertedAddressesKey += `-${process.env.CHAIN_ID}`;
+    databaseKeys.alertedAddressesCriticalKey += `-${process.env.CHAIN_ID}`;
 
     storedData.nativeTransfers = await persistenceHelper.load(
       databaseKeys.transfersKey
@@ -256,7 +249,7 @@ export const provideInitialize = (
     );
 
     storedData.alertedHashes = alertedFuncSigs.map((sig) =>
-      ethers.utils.keccak256(ethers.utils.toUtf8Bytes(sig)).substring(0, 10)
+      ethers.keccak256(ethers.toUtf8Bytes(sig)).substring(0, 10)
     );
 
     alertedSigsWithAddress = alertedFuncSigs.map((sig) => {
@@ -265,7 +258,7 @@ export const provideInitialize = (
     });
 
     alertedHashesWithAddress = alertedSigsWithAddress.map((sig) =>
-      ethers.utils.keccak256(ethers.utils.toUtf8Bytes(sig)).substring(0, 10)
+      ethers.keccak256(ethers.toUtf8Bytes(sig)).substring(0, 10)
     );
 
     const initializeAndGetPastAlerts = async () => {
@@ -327,11 +320,11 @@ export const provideHandleTransaction =
       let victims: string[] = [];
 
       tupleMulticalls.forEach((invocation) => {
-        const { args }: { args: ethers.utils.Result } = invocation;
+        const { args }: { args: ethers.Result } = invocation;
 
         args[0].forEach((call: any) => {
           if (call.callData.startsWith(TRANSFER_FROM_SIG)) {
-            const iface = new ethers.utils.Interface(TRANSFER_FROM_ABI);
+            const iface = new ethers.Interface(TRANSFER_FROM_ABI);
             const data = iface.decodeFunctionData(
               "transferFrom",
               call.callData
@@ -340,14 +333,14 @@ export const provideHandleTransaction =
             if (!attackers.includes(recipient)) attackers.push(recipient);
             if (!victims.includes(sender)) victims.push(sender);
           } else if (call.callData.startsWith(TRANSFER_SIG)) {
-            const iface = new ethers.utils.Interface(TRANSFER_ABI);
+            const iface = new ethers.Interface(TRANSFER_ABI);
             const data = iface.decodeFunctionData("transfer", call.callData);
             const { recipient } = data;
             if (!attackers.includes(recipient)) attackers.push(recipient);
           } else if (call.callData.startsWith(PERMIT2_SIG)) {
             txEvent.traces.forEach((trace) => {
               if (trace.action.input?.startsWith(PERMIT2_TRANSFER_FROM_SIG)) {
-                const iface = new ethers.utils.Interface(
+                const iface = new ethers.Interface(
                   PERMIT2_TRANSFER_FROM_FUNCTION_ABI
                 );
                 const data = iface.decodeFunctionData(
@@ -396,23 +389,23 @@ export const provideHandleTransaction =
       parallelMulticalls.forEach((invocation) => {
         const {
           args: { callData },
-        }: { args: ethers.utils.Result } = invocation;
+        }: { args: ethers.Result } = invocation;
         callData.forEach((call: any) => {
           if (call.startsWith(TRANSFER_FROM_SIG)) {
-            const iface = new ethers.utils.Interface(TRANSFER_FROM_ABI);
+            const iface = new ethers.Interface(TRANSFER_FROM_ABI);
             const data = iface.decodeFunctionData("transferFrom", call);
             const { recipient, sender } = data;
             if (!attackers.includes(recipient)) attackers.push(recipient);
             if (!victims.includes(sender)) victims.push(sender);
           } else if (call.startsWith(TRANSFER_SIG)) {
-            const iface = new ethers.utils.Interface(TRANSFER_ABI);
+            const iface = new ethers.Interface(TRANSFER_ABI);
             const data = iface.decodeFunctionData("transfer", call);
             const { recipient } = data;
             if (!attackers.includes(recipient)) attackers.push(recipient);
           } else if (call.startsWith(PERMIT2_SIG)) {
             txEvent.traces.forEach((trace) => {
               if (trace.action.input?.startsWith(PERMIT2_TRANSFER_FROM_SIG)) {
-                const iface = new ethers.utils.Interface(
+                const iface = new ethers.Interface(
                   PERMIT2_TRANSFER_FROM_FUNCTION_ABI
                 );
                 const data = iface.decodeFunctionData(
@@ -550,7 +543,7 @@ export const provideHandleTransaction =
     } else if (!to) {
       if (isRelevantChain) contractCreationsCount++;
       const nonce = txEvent.transaction.nonce;
-      const createdContractAddress = ethers.utils.getContractAddress({
+      const createdContractAddress = ethers.getCreateAddress({
         from,
         nonce,
       });
@@ -806,7 +799,7 @@ export const provideHandleTransaction =
               hash
             );
             if (fundingAddress) {
-              const bnValue = ethers.BigNumber.from(value);
+              const bnValue = BigInt(value);
               const transfer = {
                 from,
                 fromNonce,
@@ -821,18 +814,16 @@ export const provideHandleTransaction =
               const isTransferValueOutOfRangeForAtLeastOne = nativeTransfers[
                 to
               ].some((existingTransfer) => {
-                const lowerBound = ethers.BigNumber.from(existingTransfer.value)
-                  .mul(8)
-                  .div(10); // 80% of existing value
-                const upperBound = ethers.BigNumber.from(existingTransfer.value)
-                  .mul(12)
-                  .div(10); // 120% of existing value
-                return bnValue.lt(lowerBound) || bnValue.gt(upperBound);
+                const existingValueBN = BigInt(existingTransfer.value); // Convert existing value to BigInt
+                const lowerBound = (existingValueBN * 8n) / 10n; // 80% of existing value
+                const upperBound = (existingValueBN * 12n) / 10n; // 120% of existing value
+                // Check if the value is out of range
+                return bnValue < lowerBound || bnValue > upperBound;
               });
 
               const isTransferValueUnique = nativeTransfers[to].every(
                 (existingTransfer) =>
-                  !ethers.BigNumber.from(existingTransfer.value).eq(bnValue)
+                  !(BigInt(existingTransfer.value) === bnValue)
               );
               const isLatestToUnique = nativeTransfers[to].every(
                 (existingTransfer) => existingTransfer.latestTo !== latestTo
@@ -967,7 +958,7 @@ export const provideHandleTransaction =
               ? ["NIP-1", FindingSeverity.Medium]
               : ["NIP-2", FindingSeverity.Info];
           if (value !== "0x0") {
-            const bNValue = ethers.BigNumber.from(value);
+            const bNValue = BigInt(value);
             isValueRound = checkRoundValue(bNValue);
             if (!isValueRound) {
               isValueUnique = await dataFetcher.isValueUnique(
@@ -1096,7 +1087,7 @@ export const provideHandleBlock =
       alertedAddressesCriticalKey: string;
     },
     infoAlerts: { alerts: Alert[] },
-    getAlerts: (query: AlertQueryOptions) => Promise<AlertsResponse>,
+    getAlerts: (query: AlertQueryOptions) => Promise<AlertQueryResponse>,
     calculateAlertRate: any
   ) =>
   async (blockEvent: BlockEvent) => {
@@ -1325,7 +1316,6 @@ export const provideHandleBlock =
 
 export default {
   initialize: provideInitialize(
-    getEthersProvider(),
     new PersistenceHelper(DATABASE_URL),
     storedData,
     DATABASE_OBJECT_KEYS,

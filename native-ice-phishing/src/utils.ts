@@ -1,4 +1,4 @@
-import { TransactionEvent, ethers } from "forta-agent";
+import { TransactionEvent, ethers } from "@fortanetwork/forta-bot";
 
 const ONE_DAY = 24 * 60 * 60;
 const timePeriodDays = 5;

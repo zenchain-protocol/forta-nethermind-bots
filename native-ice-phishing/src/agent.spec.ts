@@ -1,5 +1,6 @@
 import {
   Alert,
+  BlockEvent,
   EntityType,
   Finding,
   FindingSeverity,
@@ -7,11 +8,13 @@ import {
   HandleBlock,
   HandleTransaction,
   Label,
+  LogDescription,
+  TransactionEvent,
   createTransactionEvent,
   ethers,
   getAlerts,
-  getEthersProvider,
-} from "forta-agent";
+  getProvider,
+} from "@fortanetwork/forta-bot";
 import {
   TestTransactionEvent,
   MockEthersProvider,
@@ -30,34 +33,7 @@ import calculateAlertRate, { ScanCountType } from "bot-alert-rate";
 import { Data, Transfer, WITHDRAW_SIG } from "./utils";
 import DataFetcher from "./fetcher";
 import { PersistenceHelper } from "./persistence.helper";
-import axios from "axios";
-
-// TODO: Remove this after tests are passing
-axios.interceptors.response.use(function (response: any) {
-    // Optional: Do something with response data
-    return response;
-  }, function (error: any) {
-    // Do whatever you want with the response error here:
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.log(error.request);
-      console.log(error.response.data);
-      console.log(error.response.status);
-      console.log(error.response.headers);
-    } else if (error.request) {
-      // The request was made but no response was received
-      // `error.request` is an instance of XMLHttpRequest in the browser 
-      // and an instance of http.ClientRequest in node.js
-      console.log(error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.log('Error', error.message);
-    }
-    // But, be SURE to return the rejected promise, so the caller still has 
-    // the option of additional specialized handling at the call-site:
-    return Promise.reject(error);
-  });
+import { TransactionDescription } from "@fortanetwork/forta-bot/dist/transactions";
 
 jest.setTimeout(400000);
 
@@ -135,8 +111,8 @@ const testCreateLowSeverityFinding = (
   anomalyScore: number
 ): Finding => {
   const alertId = "NIP-3";
-  const uniqueKey = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(from + to + funcSig + alertId)
+  const uniqueKey = ethers.keccak256(
+    ethers.toUtf8Bytes(from + to + funcSig + alertId)
   );
   return Finding.fromObject({
     name: "Possible native ice phishing with social engineering component attack",
@@ -188,8 +164,8 @@ const testCreateHighSeverityFinding = (
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
-  const uniqueKey = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(
+  const uniqueKey = ethers.keccak256(
+    ethers.toUtf8Bytes(
       to + alertId + currentDate + currentMonth + currentYear
     )
   );
@@ -327,8 +303,8 @@ const testCreateCriticalNIPSeverityFinding = (
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
-  const uniqueKey = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(
+  const uniqueKey = ethers.keccak256(
+    ethers.toUtf8Bytes(
       attacker + alertId + currentDate + currentMonth + currentYear
     )
   );
@@ -397,7 +373,7 @@ const mockFetcher = {
   isMajorityNativeTransfers: jest.fn(),
 };
 async function mockDataFetcherCreator(
-  provider: ethers.providers.Provider
+  provider: ethers.JsonRpcProvider
 ): Promise<DataFetcher> {
   return mockFetcher as any;
 }
@@ -453,7 +429,10 @@ describe("Native Ice Phishing Bot test suite", () => {
   });
 
   it("tests performance", async () => {
-    const realProvider = getEthersProvider();
+    const realProvider = await getProvider({
+      rpcUrl: "https://cloudflare-eth.com/",
+      handleBlock: handleBlock
+    });
     const realInitialize = provideInitialize(
       realProvider,
       new PersistenceHelper(REAL_DATABASE_URL),
@@ -479,28 +458,47 @@ describe("Native Ice Phishing Bot test suite", () => {
       "0xa8d52384592460c6a34ab0c08f17370f628e49d11f6f017ae22ea6ae1cb29b46"
     );
 
-    const nativeTransferTxEvent = createTransactionEvent({
-      transaction: {
-        hash: nativeTransferTxReceipt.transactionHash,
-        from: nativeTransferTxReceipt.from.toLowerCase(),
-        to: nativeTransferTxReceipt.to.toLowerCase(),
-        nonce: nativeTransferTx.nonce,
-        data: nativeTransferTx.data,
+    const nativeTransferTxEvent = createTransactionEvent(
+      {
+        hash: nativeTransferTxReceipt!.hash,
+        from: nativeTransferTxReceipt!.from.toLowerCase(),
+        to: nativeTransferTxReceipt!.to!.toLowerCase(),
+        nonce: nativeTransferTx!.nonce.toString(),
+        // V2 change: 'data' does not exist in type 'JsonRpcTransaction'; maybe use input instead?
+        input: nativeTransferTx!.data,
         gas: "1",
-        gasPrice: nativeTransferTx.gasPrice!.toString(),
+        gasPrice: nativeTransferTx!.gasPrice!.toString(),
         value: "0x1bbd9addfa6d0d4",
-        r: nativeTransferTx.r!,
-        s: nativeTransferTx.s!,
-        v: nativeTransferTx.v!.toFixed(),
+        r: nativeTransferTx!.signature.r!,
+        s: nativeTransferTx!.signature.s!,
+        v: nativeTransferTx!.signature.v!.toFixed(),
       },
-      block: {
-        number: nativeTransferTxReceipt.blockNumber,
-        hash: nativeTransferTxReceipt.blockHash,
-        timestamp: 43534534,
+      {
+        number: nativeTransferTxReceipt!.blockNumber.toString(),
+        hash: nativeTransferTxReceipt!.blockHash,
+        timestamp: "43534534",
+        nonce: nativeTransferTx!.nonce.toString(),
+        difficulty: "",
+        extraData: "",
+        gasLimit: "",
+        gasUsed: nativeTransferTxReceipt!.gasUsed.toString(),
+        logsBloom: nativeTransferTxReceipt!.logsBloom,
+        miner: "",
+        mixHash: "",
+        parentHash: "",
+        receiptsRoot: nativeTransferTxReceipt!.root!,
+        sha3Uncles: "",
+        size: "",
+        stateRoot: "",
+        totalDifficulty: "",
+        transactionsRoot: "",
+        uncles: [],
+        transactions: []
       },
-      logs: [],
-      contractAddress: null,
-    });
+      Number(process.env.CHAIN_ID || ""),
+      [],
+      [],
+    );
 
     const suspiciousNativeTransferTxReceipt =
       await realProvider.getTransactionReceipt(
@@ -511,28 +509,47 @@ describe("Native Ice Phishing Bot test suite", () => {
       "0x5f53677abb9b2dedc24e81b65ba8bd782afedca4b55a4e2adae41bb19dce9c20"
     );
 
-    const suspiciousNativeTransferTxEvent = createTransactionEvent({
-      transaction: {
-        hash: suspiciousNativeTransferTxReceipt.transactionHash,
-        from: suspiciousNativeTransferTxReceipt.from.toLowerCase(),
-        to: suspiciousNativeTransferTxReceipt.to.toLowerCase(),
-        nonce: suspiciousNativeTransferTx.nonce,
-        data: suspiciousNativeTransferTx.data,
+    const suspiciousNativeTransferTxEvent = createTransactionEvent(
+      {
+        hash: suspiciousNativeTransferTxReceipt!.hash,
+        from: suspiciousNativeTransferTxReceipt!.from.toLowerCase(),
+        to: suspiciousNativeTransferTxReceipt!.to!.toLowerCase(),
+        nonce: suspiciousNativeTransferTx!.nonce.toString(),
+        // V2 change: 'data' does not exist in type 'JsonRpcTransaction'; maybe use input instead?
+        input: suspiciousNativeTransferTx!.data,
         gas: "1",
-        gasPrice: suspiciousNativeTransferTx.gasPrice!.toString(),
+        gasPrice: suspiciousNativeTransferTx!.gasPrice!.toString(),
         value: "0xbafd6024f843",
-        r: suspiciousNativeTransferTx.r!,
-        s: suspiciousNativeTransferTx.s!,
-        v: suspiciousNativeTransferTx.v!.toFixed(),
+        r: suspiciousNativeTransferTx!.signature.r!,
+        s: suspiciousNativeTransferTx!.signature.s!,
+        v: suspiciousNativeTransferTx!.signature.v!.toFixed(),
       },
-      block: {
-        number: suspiciousNativeTransferTxReceipt.blockNumber,
-        hash: suspiciousNativeTransferTxReceipt.blockHash,
-        timestamp: 43534534,
+      {
+        number: suspiciousNativeTransferTx!.blockNumber!.toString(),
+        hash: suspiciousNativeTransferTx!.blockHash!,
+        timestamp: "43534534",
+        nonce: suspiciousNativeTransferTx!.nonce.toString(),
+        difficulty: "",
+        extraData: "",
+        gasLimit: "",
+        gasUsed: suspiciousNativeTransferTxReceipt!.gasUsed.toString(),
+        logsBloom: suspiciousNativeTransferTxReceipt!.logsBloom,
+        miner: "",
+        mixHash: "",
+        parentHash: "",
+        receiptsRoot: suspiciousNativeTransferTxReceipt!.root!,
+        sha3Uncles: "",
+        size: "",
+        stateRoot: "",
+        totalDifficulty: "",
+        transactionsRoot: "",
+        uncles: [],
+        transactions: []
       },
-      logs: [],
-      contractAddress: null,
-    });
+      Number(process.env.CHAIN_ID || ""),
+      [],
+      [],
+    );
 
     const socialEngineeringEoaTxReceipt =
       await realProvider.getTransactionReceipt(
@@ -543,28 +560,47 @@ describe("Native Ice Phishing Bot test suite", () => {
       "0x546d0c486b22590fe34ba7a8bf0896929fb4d9659fe130f2e0113e9fad45f4ad"
     );
 
-    const socialEngineeringEoaTxEvent = createTransactionEvent({
-      transaction: {
-        hash: socialEngineeringEoaTxReceipt.transactionHash,
-        from: socialEngineeringEoaTxReceipt.from.toLowerCase(),
-        to: socialEngineeringEoaTxReceipt.to.toLowerCase(),
-        nonce: socialEngineeringEoaTx.nonce,
-        data: socialEngineeringEoaTx.data,
+    const socialEngineeringEoaTxEvent = createTransactionEvent(
+      {
+        hash: socialEngineeringEoaTxReceipt!.hash,
+        from: socialEngineeringEoaTxReceipt!.from.toLowerCase(),
+        to: socialEngineeringEoaTxReceipt!.to!.toLowerCase(),
+        nonce: socialEngineeringEoaTx!.nonce.toString(),
+        // V2 change: 'data' does not exist in type 'JsonRpcTransaction'; maybe use input instead?
+        input: socialEngineeringEoaTx!.data,
         gas: "1",
-        gasPrice: socialEngineeringEoaTx.gasPrice!.toString(),
+        gasPrice: socialEngineeringEoaTx!.gasPrice!.toString(),
         value: "0x0",
-        r: socialEngineeringEoaTx.r!,
-        s: socialEngineeringEoaTx.s!,
-        v: socialEngineeringEoaTx.v!.toFixed(),
+        r: socialEngineeringEoaTx!.signature.r!,
+        s: socialEngineeringEoaTx!.signature.s!,
+        v: socialEngineeringEoaTx!.signature.v!.toFixed(),
       },
-      block: {
-        number: socialEngineeringEoaTxReceipt.blockNumber,
-        hash: socialEngineeringEoaTxReceipt.blockHash,
-        timestamp: 43534534,
+      {
+        number: socialEngineeringEoaTx!.blockNumber!.toString(),
+        hash: socialEngineeringEoaTx!.blockHash!,
+        timestamp: "43534534",
+        nonce: socialEngineeringEoaTx!.nonce.toString(),
+        difficulty: "",
+        extraData: "",
+        gasLimit: "",
+        gasUsed: socialEngineeringEoaTxReceipt!.gasUsed.toString(),
+        logsBloom: socialEngineeringEoaTxReceipt!.logsBloom,
+        miner: "",
+        mixHash: "",
+        parentHash: "",
+        receiptsRoot: socialEngineeringEoaTxReceipt!.root!,
+        sha3Uncles: "",
+        size: "",
+        stateRoot: "",
+        totalDifficulty: "",
+        transactionsRoot: "",
+        uncles: [],
+        transactions: []
       },
-      logs: [],
-      contractAddress: null,
-    });
+      Number(process.env.CHAIN_ID || ""),
+      [],
+      [],
+    );
 
     const socialEngineeringContractTxReceipt =
       await realProvider.getTransactionReceipt(
@@ -575,28 +611,47 @@ describe("Native Ice Phishing Bot test suite", () => {
       "0xe9fc809faa5b00555554baa623e3ebaee697f515983be1b1b67e5a8c603df35a"
     );
 
-    const socialEngineeringContractTxEvent = createTransactionEvent({
-      transaction: {
-        hash: socialEngineeringContractTxReceipt.transactionHash,
-        from: socialEngineeringContractTxReceipt.from.toLowerCase(),
-        to: socialEngineeringContractTxReceipt.to.toLowerCase(),
-        nonce: socialEngineeringContractTx.nonce,
-        data: socialEngineeringContractTx.data,
+    const socialEngineeringContractTxEvent = createTransactionEvent(
+      {
+        hash: socialEngineeringContractTxReceipt!.hash,
+        from: socialEngineeringContractTxReceipt!.from.toLowerCase(),
+        to: socialEngineeringContractTxReceipt!.to!.toLowerCase(),
+        nonce: socialEngineeringContractTx!.nonce.toString(),
+        // V2 change: 'data' does not exist in type 'JsonRpcTransaction'; maybe use input instead?
+        input: socialEngineeringContractTx!.data,
         gas: "1",
-        gasPrice: socialEngineeringContractTx.gasPrice!.toString(),
+        gasPrice: socialEngineeringContractTx!.gasPrice!.toString(),
         value: "0x2e1a8be6b991436",
-        r: socialEngineeringContractTx.r!,
-        s: socialEngineeringContractTx.s!,
-        v: socialEngineeringContractTx.v!.toFixed(),
+        r: socialEngineeringContractTx!.signature.r!,
+        s: socialEngineeringContractTx!.signature.s!,
+        v: socialEngineeringContractTx!.signature.v!.toFixed(),
       },
-      block: {
-        number: socialEngineeringContractTxReceipt.blockNumber,
-        hash: socialEngineeringContractTxReceipt.blockHash,
-        timestamp: 43534534,
+      {
+        number: socialEngineeringContractTx!.blockNumber!.toString(),
+        hash: socialEngineeringContractTx!.blockHash!,
+        timestamp: "43534534",
+        nonce: socialEngineeringContractTx!.nonce.toString(),
+        difficulty: "",
+        extraData: "",
+        gasLimit: "",
+        gasUsed: socialEngineeringContractTxReceipt!.gasUsed.toString(),
+        logsBloom: socialEngineeringContractTxReceipt!.logsBloom,
+        miner: "",
+        mixHash: "",
+        parentHash: "",
+        receiptsRoot: socialEngineeringContractTxReceipt!.root!,
+        sha3Uncles: "",
+        size: "",
+        stateRoot: "",
+        totalDifficulty: "",
+        transactionsRoot: "",
+        uncles: [],
+        transactions: []
       },
-      logs: [],
-      contractAddress: null,
-    });
+      Number(process.env.CHAIN_ID || ""),
+      [],
+      [],
+    );
 
     const ownerWithdrawalTxReceipt = await realProvider.getTransactionReceipt(
       "0xc794fc867030f4402da18848578255142840fdcd71bfccc2b3a333090bc82fcf"
@@ -606,8 +661,45 @@ describe("Native Ice Phishing Bot test suite", () => {
       "0xc794fc867030f4402da18848578255142840fdcd71bfccc2b3a333090bc82fcf"
     );
 
-    const ownerWithdrawalTxEvent = createTransactionEvent({
-      traces: [
+    const ownerWithdrawalTxEvent = createTransactionEvent(
+      {
+        hash: ownerWithdrawalTxReceipt!.hash,
+        from: ownerWithdrawalTxReceipt!.from.toLowerCase(),
+        to: ownerWithdrawalTxReceipt!.to!.toLowerCase(),
+        nonce: ownerWithdrawalTx!.nonce.toString(),
+        // V2 change: 'data' does not exist in type 'JsonRpcTransaction'; maybe use input instead?
+        input: ownerWithdrawalTx!.data,
+        gas: "1",
+        gasPrice: ownerWithdrawalTx!.gasPrice!.toString(),
+        value: "0x0",
+        r: ownerWithdrawalTx!.signature.r!,
+        s: ownerWithdrawalTx!.signature.s!,
+        v: ownerWithdrawalTx!.signature.v!.toFixed(),
+      },
+      {
+        number: ownerWithdrawalTx!.blockNumber!.toString(),
+        hash: ownerWithdrawalTx!.blockHash!,
+        timestamp: "43534534",
+        nonce: ownerWithdrawalTx!.nonce.toString(),
+        difficulty: "",
+        extraData: "",
+        gasLimit: "",
+        gasUsed: ownerWithdrawalTxReceipt!.gasUsed.toString(),
+        logsBloom: ownerWithdrawalTxReceipt!.logsBloom,
+        miner: "",
+        mixHash: "",
+        parentHash: "",
+        receiptsRoot: ownerWithdrawalTxReceipt!.root!,
+        sha3Uncles: "",
+        size: "",
+        stateRoot: "",
+        totalDifficulty: "",
+        transactionsRoot: "",
+        uncles: [],
+        transactions: []
+      },
+      Number(process.env.CHAIN_ID || ""),
+      [
         {
           action: {
             callType: "call",
@@ -668,27 +760,8 @@ describe("Native Ice Phishing Bot test suite", () => {
           error: "undefined",
         },
       ],
-      transaction: {
-        hash: ownerWithdrawalTxReceipt.transactionHash,
-        from: ownerWithdrawalTxReceipt.from.toLowerCase(),
-        to: ownerWithdrawalTxReceipt.to.toLowerCase(),
-        nonce: ownerWithdrawalTx.nonce,
-        data: ownerWithdrawalTx.data,
-        gas: "1",
-        gasPrice: ownerWithdrawalTx.gasPrice!.toString(),
-        value: "0x0",
-        r: ownerWithdrawalTx.r!,
-        s: ownerWithdrawalTx.s!,
-        v: ownerWithdrawalTx.v!.toFixed(),
-      },
-      block: {
-        number: ownerWithdrawalTxReceipt.blockNumber,
-        hash: ownerWithdrawalTxReceipt.blockHash,
-        timestamp: 43534534,
-      },
-      logs: [],
-      contractAddress: null,
-    });
+      [],
+    );
 
     const phishingContractDeploymentTxReceipt =
       await realProvider.getTransactionReceipt(
@@ -699,8 +772,45 @@ describe("Native Ice Phishing Bot test suite", () => {
       "0x93da8a297dc5561f5373b618a9de9368b03da51babf8a82b0b8c92d659a4830e"
     );
 
-    const phishingContractDeploymentTxEvent = createTransactionEvent({
-      traces: [
+    const phishingContractDeploymentTxEvent = createTransactionEvent(
+      {
+        hash: phishingContractDeploymentTxReceipt!.hash,
+        from: phishingContractDeploymentTxReceipt!.from.toLowerCase(),
+        to: null,
+        nonce: phishingContractDeploymentTx!.nonce.toString(),
+        // V2 change: 'data' does not exist in type 'JsonRpcTransaction'; maybe use input instead?
+        input: phishingContractDeploymentTx!.data,
+        gas: "1",
+        gasPrice: phishingContractDeploymentTx!.gasPrice!.toString(),
+        value: "0x0",
+        r: phishingContractDeploymentTx!.signature.r!,
+        s: phishingContractDeploymentTx!.signature.s!,
+        v: phishingContractDeploymentTx!.signature.v!.toFixed(),
+      },
+      {
+        number: ownerWithdrawalTx!.blockNumber!.toString(),
+        hash: ownerWithdrawalTx!.blockHash!,
+        timestamp: "43534534",
+        nonce: ownerWithdrawalTx!.nonce.toString(),
+        difficulty: "",
+        extraData: "",
+        gasLimit: "",
+        gasUsed: ownerWithdrawalTxReceipt!.gasUsed.toString(),
+        logsBloom: ownerWithdrawalTxReceipt!.logsBloom,
+        miner: "",
+        mixHash: "",
+        parentHash: "",
+        receiptsRoot: ownerWithdrawalTxReceipt!.root!,
+        sha3Uncles: "",
+        size: "",
+        stateRoot: "",
+        totalDifficulty: "",
+        transactionsRoot: "",
+        uncles: [],
+        transactions: []
+      },
+      Number(process.env.CHAIN_ID || ""),
+      [
         {
           action: {
             callType: "undefined",
@@ -731,27 +841,8 @@ describe("Native Ice Phishing Bot test suite", () => {
           error: "undefined",
         },
       ],
-      transaction: {
-        hash: phishingContractDeploymentTxReceipt.transactionHash,
-        from: phishingContractDeploymentTxReceipt.from.toLowerCase(),
-        to: null,
-        nonce: phishingContractDeploymentTx.nonce,
-        data: phishingContractDeploymentTx.data,
-        gas: "1",
-        gasPrice: phishingContractDeploymentTx.gasPrice!.toString(),
-        value: "0x0",
-        r: phishingContractDeploymentTx.r!,
-        s: phishingContractDeploymentTx.s!,
-        v: phishingContractDeploymentTx.v!.toFixed(),
-      },
-      block: {
-        number: phishingContractDeploymentTxReceipt.blockNumber,
-        hash: phishingContractDeploymentTxReceipt.blockHash,
-        timestamp: 43534534,
-      },
-      logs: [],
-      contractAddress: null,
-    });
+      []
+    );
 
     // E.g. ERC20 transfer
     const otherTxReceipt = await realProvider.getTransactionReceipt(
@@ -763,35 +854,58 @@ describe("Native Ice Phishing Bot test suite", () => {
     );
 
     // Lowercase all addresses in logs to match the real txEvent logs
-    const lowerCaseLogs = otherTxReceipt.logs.map((log) => {
+    const lowerCaseLogs = otherTxReceipt!.logs.map((log) => {
       return {
         ...log,
         address: log.address.toLowerCase(),
+        topics: Array.from(log.topics), // V2 change to mutable string[]
+        logIndex: log.index.toString(), // V2 rename & type change
+        blockNumber: log.blockNumber.toString(), // V2 type change
+        transactionIndex: log.transactionIndex.toString() // V2 type change
       };
     });
 
-    const otherTxEvent = createTransactionEvent({
-      transaction: {
-        hash: otherTxReceipt.transactionHash,
-        from: otherTxReceipt.from.toLowerCase(),
-        to: otherTxReceipt.to.toLowerCase(),
-        nonce: otherTx.nonce,
-        data: otherTx.data,
+    const otherTxEvent = createTransactionEvent(
+      {
+        hash: otherTxReceipt!.hash,
+        from: otherTxReceipt!.from.toLowerCase(),
+        to: otherTxReceipt!.to!.toLowerCase(),
+        nonce: otherTx!.nonce.toString(),
+        // V2 change: 'data' does not exist in type 'JsonRpcTransaction'; maybe use input instead?
+        input: otherTx!.data,
         gas: "1",
-        gasPrice: otherTx.gasPrice!.toString(),
+        gasPrice: otherTx!.gasPrice!.toString(),
         value: "0x0",
-        r: otherTx.r!,
-        s: otherTx.s!,
-        v: otherTx.v!.toFixed(),
+        r: otherTx!.signature.r!,
+        s: otherTx!.signature.s!,
+        v: otherTx!.signature.v!.toFixed(),
       },
-      block: {
-        number: otherTxReceipt.blockNumber,
-        hash: otherTxReceipt.blockHash,
-        timestamp: 43534534,
+      {
+        number: otherTx!.blockNumber!.toString(),
+        hash: otherTx!.blockHash!,
+        timestamp: "43534534",
+        nonce: otherTx!.nonce.toString(),
+        difficulty: "",
+        extraData: "",
+        gasLimit: "",
+        gasUsed: otherTxReceipt!.gasUsed.toString(),
+        logsBloom: otherTxReceipt!.logsBloom,
+        miner: "",
+        mixHash: "",
+        parentHash: "",
+        receiptsRoot: otherTxReceipt!.root!,
+        sha3Uncles: "",
+        size: "",
+        stateRoot: "",
+        totalDifficulty: "",
+        transactionsRoot: "",
+        uncles: [],
+        transactions: []
       },
-      logs: lowerCaseLogs,
-      contractAddress: null,
-    });
+      Number(process.env.CHAIN_ID || ""),
+      [],
+      lowerCaseLogs,
+    );
 
     //     Chain: Blocktime, Number of Tx -> Avg processing time in ms target
     //     Ethereum: 12s, 150 -> 80ms
@@ -890,7 +1004,7 @@ describe("Native Ice Phishing Bot test suite", () => {
         processingTimeOwnerWithdrawalTx * 0.005 +
         processingTimeSocialEngineeringEoaTx * 0.005 +
         processingTimeSocialEngineeringContractTx * 0.005) /
-        7
+      7
     );
     expect(
       (processingTimeOtherTx * 0.5 +
@@ -900,31 +1014,67 @@ describe("Native Ice Phishing Bot test suite", () => {
         processingTimeOwnerWithdrawalTx * 0.005 +
         processingTimeSocialEngineeringEoaTx * 0.005 +
         processingTimeSocialEngineeringContractTx * 0.005) /
-        7
+      7
     ).toBeLessThan(320);
   });
 
   it("Should return empty findings if the input data is not a function signature", async () => {
-    const tx: TestTransactionEvent = new TestTransactionEvent()
+    const testTx: TestTransactionEvent = new TestTransactionEvent()
       .setTo(createAddress("0x01"))
       .setValue("0x0bb")
       .setBlock(1234456)
-      .setData("0x00");
+      .setData("0x00")
+
+    const tx: TransactionEvent = {
+      ...testTx,
+      chainId: Number(process.env.CHAIN_ID),
+      hash: testTx.hash,
+      from: testTx.hash,
+      to: testTx.to,
+      gasPrice: testTx.gasPrice,
+      timestamp: testTx.timestamp,
+      blockNumber: testTx.blockNumber,
+      blockHash: testTx.blockHash,
+      filterLog: function (eventAbi: string | string[], contractAddress?: string | string[] | undefined): LogDescription[] {
+        return [];
+      },
+      filterFunction: function (functionAbi: string | string[], contractAddress?: string | string[] | undefined): TransactionDescription[] {
+        return [];
+      }
+    }
 
     mockFetcher.getTransactions.mockReturnValueOnce([
       { hash: "hash15" },
       { hash: "hash25" },
     ]);
-    const findings: Finding[] = await handleTransaction(tx);
+    const findings: Finding[] = await handleTransaction(tx, mockProvider as unknown as ethers.JsonRpcProvider);
     expect(findings).toStrictEqual([]);
   });
 
   it("Should return empty findings if the call is to a contract", async () => {
-    const tx: TestTransactionEvent = new TestTransactionEvent()
+    const testTx: TestTransactionEvent = new TestTransactionEvent()
       .setTo(createAddress("0x01"))
       .setValue("0x0bb")
       .setBlock(121212)
       .setData("0x12345678");
+
+    const tx: TransactionEvent = {
+      ...testTx,
+      chainId: Number(process.env.CHAIN_ID),
+      hash: testTx.hash,
+      from: testTx.hash,
+      to: testTx.to,
+      gasPrice: testTx.gasPrice,
+      timestamp: testTx.timestamp,
+      blockNumber: testTx.blockNumber,
+      blockHash: testTx.blockHash,
+      filterLog: function (eventAbi: string | string[], contractAddress?: string | string[] | undefined): LogDescription[] {
+        return [];
+      },
+      filterFunction: function (functionAbi: string | string[], contractAddress?: string | string[] | undefined): TransactionDescription[] {
+        return [];
+      }
+    }
 
     mockFetcher.getTransactions.mockReturnValueOnce([
       { hash: "hash15" },
@@ -934,18 +1084,36 @@ describe("Native Ice Phishing Bot test suite", () => {
     when(mockFetcher.isEoa)
       .calledWith(createAddress("0x01"))
       .mockReturnValue(false);
-    const findings: Finding[] = await handleTransaction(tx);
+    const findings: Finding[] = await handleTransaction(tx, mockProvider as unknown as ethers.JsonRpcProvider);
     expect(findings).toStrictEqual([]);
   });
 
   it("Should return a Medium severity finding if the call is to an EOA, the value is non-zero and there's input data that's a function signature", async () => {
-    const tx: TestTransactionEvent = new TestTransactionEvent()
+    const testTx: TestTransactionEvent = new TestTransactionEvent()
       .setFrom(createAddress("0x0f"))
       .setTo(createAddress("0x01"))
       .setValue("0x0bb")
       .setBlock(775577)
       .setData("0x12345678")
       .setHash("0xabcd");
+
+    const tx: TransactionEvent = {
+      ...testTx,
+      chainId: Number(process.env.CHAIN_ID),
+      hash: testTx.hash,
+      from: testTx.hash,
+      to: testTx.to,
+      gasPrice: testTx.gasPrice,
+      timestamp: testTx.timestamp,
+      blockNumber: testTx.blockNumber,
+      blockHash: testTx.blockHash,
+      filterLog: function (eventAbi: string | string[], contractAddress?: string | string[] | undefined): LogDescription[] {
+        return [];
+      },
+      filterFunction: function (functionAbi: string | string[], contractAddress?: string | string[] | undefined): TransactionDescription[] {
+        return [];
+      }
+    }
 
     mockFetcher.getTransactions.mockReturnValueOnce([
       { hash: "hash15" },
@@ -968,7 +1136,7 @@ describe("Native Ice Phishing Bot test suite", () => {
         createAddress("0x01"),
         1,
         "0xabcd",
-        ethers.BigNumber.from("0x0bb").toString()
+        BigInt("0x0bb").toString()
       )
       .mockReturnValue(true);
 
@@ -976,7 +1144,7 @@ describe("Native Ice Phishing Bot test suite", () => {
       .calledWith(1, BOT_ID, "NIP-1", ScanCountType.TxWithInputDataCount, 0)
       .mockReturnValue(0.0034234);
 
-    const findings: Finding[] = await handleTransaction(tx);
+    const findings: Finding[] = await handleTransaction(tx, mockProvider as unknown as ethers.JsonRpcProvider);
     expect(findings).toStrictEqual([
       testCreateFinding(
         "0xabcd",
@@ -990,13 +1158,31 @@ describe("Native Ice Phishing Bot test suite", () => {
   });
 
   it("Should return an Info severity finding if the call is to an EOA, the value is zero and there's input data that's a function signature", async () => {
-    const tx: TestTransactionEvent = new TestTransactionEvent()
+    const testTx: TestTransactionEvent = new TestTransactionEvent()
       .setFrom(createAddress("0x0f"))
       .setTo(createAddress("0x01"))
       .setValue("0x0")
       .setBlock(7755227)
       .setData("0x12345678")
       .setHash("0xabcd");
+
+    const tx: TransactionEvent = {
+      ...testTx,
+      chainId: Number(process.env.CHAIN_ID),
+      hash: testTx.hash,
+      from: testTx.hash,
+      to: testTx.to,
+      gasPrice: testTx.gasPrice,
+      timestamp: testTx.timestamp,
+      blockNumber: testTx.blockNumber,
+      blockHash: testTx.blockHash,
+      filterLog: function (eventAbi: string | string[], contractAddress?: string | string[] | undefined): LogDescription[] {
+        return [];
+      },
+      filterFunction: function (functionAbi: string | string[], contractAddress?: string | string[] | undefined): TransactionDescription[] {
+        return [];
+      }
+    }
 
     mockFetcher.getTransactions.mockReturnValueOnce([
       { hash: "hash15" },
@@ -1015,7 +1201,7 @@ describe("Native Ice Phishing Bot test suite", () => {
       .calledWith(1, BOT_ID, "NIP-2", ScanCountType.TxWithInputDataCount, 0)
       .mockReturnValue(0.0234234);
 
-    const findings: Finding[] = await handleTransaction(tx);
+    const findings: Finding[] = await handleTransaction(tx, mockProvider as unknown as ethers.JsonRpcProvider);
     expect(findings).toStrictEqual([
       testCreateFinding(
         "0xabcd",
@@ -1029,13 +1215,31 @@ describe("Native Ice Phishing Bot test suite", () => {
   });
 
   it("Should return a Low severity finding if the call is to a contract, the value is non-zero and there's input data that's a function signature which had previous resulted in a EOA alert", async () => {
-    const tx: TestTransactionEvent = new TestTransactionEvent()
+    const testTx: TestTransactionEvent = new TestTransactionEvent()
       .setFrom(createAddress("0x0f"))
       .setTo(createAddress("0x01"))
       .setValue("0x0bb")
       .setBlock(88888)
       .setData("0xa9059cbb")
       .setHash("0xabcd");
+
+    const tx: TransactionEvent = {
+      ...testTx,
+      chainId: Number(process.env.CHAIN_ID),
+      hash: testTx.hash,
+      from: testTx.hash,
+      to: testTx.to,
+      gasPrice: testTx.gasPrice,
+      timestamp: testTx.timestamp,
+      blockNumber: testTx.blockNumber,
+      blockHash: testTx.blockHash,
+      filterLog: function (eventAbi: string | string[], contractAddress?: string | string[] | undefined): LogDescription[] {
+        return [];
+      },
+      filterFunction: function (functionAbi: string | string[], contractAddress?: string | string[] | undefined): TransactionDescription[] {
+        return [];
+      }
+    }
 
     mockStoredData.alertedHashes.push("0xa9059cbb");
 
@@ -1068,7 +1272,7 @@ describe("Native Ice Phishing Bot test suite", () => {
       .calledWith(1, BOT_ID, "NIP-3", ScanCountType.TxWithInputDataCount, 0)
       .mockReturnValue(0.0034234);
 
-    const findings: Finding[] = await handleTransaction(tx);
+    const findings: Finding[] = await handleTransaction(tx, mockProvider as unknown as ethers.JsonRpcProvider);
     expect(findings).toStrictEqual([
       testCreateLowSeverityFinding(
         "0xabcd",
@@ -1140,13 +1344,32 @@ describe("Native Ice Phishing Bot test suite", () => {
         timestamp: 16032,
       },
     ];
-    const tx: TestTransactionEvent = new TestTransactionEvent()
+    const testTx: TestTransactionEvent = new TestTransactionEvent()
       .setFrom(createAddress("0x0f"))
       .setTo(to)
       .setValue("0x0bb")
       .setBlock(3232)
       .setTimestamp(6564564)
       .setHash("0xabcd");
+
+    const tx: TransactionEvent = {
+      ...testTx,
+      chainId: Number(process.env.CHAIN_ID),
+      hash: testTx.hash,
+      from: testTx.hash,
+      to: testTx.to,
+      gasPrice: testTx.gasPrice,
+      timestamp: testTx.timestamp,
+      blockNumber: testTx.blockNumber,
+      blockHash: testTx.blockHash,
+      filterLog: function (eventAbi: string | string[], contractAddress?: string | string[] | undefined): LogDescription[] {
+        return [];
+      },
+      filterFunction: function (functionAbi: string | string[], contractAddress?: string | string[] | undefined): TransactionDescription[] {
+        return [];
+      }
+    }
+
 
     when(mockFetcher.getNonce)
       .calledWith(createAddress("0x0f"))
@@ -1187,18 +1410,36 @@ describe("Native Ice Phishing Bot test suite", () => {
       .mockReturnValue(0.00000034234);
 
     const transfers = mockStoredData.nativeTransfers[to];
-    const findings: Finding[] = await handleTransaction(tx);
+    const findings: Finding[] = await handleTransaction(tx, mockProvider as unknown as ethers.JsonRpcProvider);
     expect(findings).toStrictEqual([
       testCreateHighSeverityFinding(to, 0.00000034234, transfers),
     ]);
   });
 
   it("should return no findings if a contract is deployed but the contract code doesn't have native ice phishing characteristics", async () => {
-    const tx: TestTransactionEvent = new TestTransactionEvent()
+    const testTx: TestTransactionEvent = new TestTransactionEvent()
       .setFrom(createAddress("0x0f"))
       .setTo(null)
       .setNonce(23)
       .setHash("0xabcd");
+
+    const tx: TransactionEvent = {
+      ...testTx,
+      chainId: Number(process.env.CHAIN_ID),
+      hash: testTx.hash,
+      from: testTx.hash,
+      to: testTx.to,
+      gasPrice: testTx.gasPrice,
+      timestamp: testTx.timestamp,
+      blockNumber: testTx.blockNumber,
+      blockHash: testTx.blockHash,
+      filterLog: function (eventAbi: string | string[], contractAddress?: string | string[] | undefined): LogDescription[] {
+        return [];
+      },
+      filterFunction: function (functionAbi: string | string[], contractAddress?: string | string[] | undefined): TransactionDescription[] {
+        return [];
+      }
+    }
 
     mockFetcher.getTransactions.mockReturnValueOnce([
       { hash: "hash15" },
@@ -1213,16 +1454,34 @@ describe("Native Ice Phishing Bot test suite", () => {
     when(mockFetcher.getSourceCode)
       .calledWith(mockContractAddress, 1)
       .mockReturnValueOnce("Not Malicious Contract Code");
-    const findings: Finding[] = await handleTransaction(tx);
+    const findings: Finding[] = await handleTransaction(tx, mockProvider as unknown as ethers.JsonRpcProvider);
     expect(findings).toStrictEqual([]);
   });
 
   it("should return no findings if a contract is deployed, the contract code can't be fetched, but the bytecode doesn't code the withdraw function signature", async () => {
-    const tx: TestTransactionEvent = new TestTransactionEvent()
+    const testTx: TestTransactionEvent = new TestTransactionEvent()
       .setFrom(createAddress("0x0f"))
       .setTo(null)
       .setNonce(23)
       .setHash("0xabcd");
+    const tx: TransactionEvent = {
+      ...testTx,
+      chainId: Number(process.env.CHAIN_ID),
+      hash: testTx.hash,
+      from: testTx.hash,
+      to: testTx.to,
+      gasPrice: testTx.gasPrice,
+      timestamp: testTx.timestamp,
+      blockNumber: testTx.blockNumber,
+      blockHash: testTx.blockHash,
+      filterLog: function (eventAbi: string | string[], contractAddress?: string | string[] | undefined): LogDescription[] {
+        return [];
+      },
+      filterFunction: function (functionAbi: string | string[], contractAddress?: string | string[] | undefined): TransactionDescription[] {
+        return [];
+      }
+    }
+
     const mockContractAddress = "0xD5B2a1345290AA8F4c671676650B5a1cE16A8575";
     when(mockFetcher.getCode)
       .calledWith(mockContractAddress)
@@ -1232,16 +1491,34 @@ describe("Native Ice Phishing Bot test suite", () => {
     when(mockFetcher.getSourceCode)
       .calledWith(mockContractAddress, 1)
       .mockReturnValueOnce("");
-    const findings: Finding[] = await handleTransaction(tx);
+    const findings: Finding[] = await handleTransaction(tx, mockProvider as unknown as ethers.JsonRpcProvider);
     expect(findings).toStrictEqual([]);
   });
 
   it("should return a finding if a contract is deployed and the contract code contains both a payable function and a withdraw-like function", async () => {
-    const tx: TestTransactionEvent = new TestTransactionEvent()
+    const testTx: TestTransactionEvent = new TestTransactionEvent()
       .setFrom(createAddress("0x0f"))
       .setTo(null)
       .setNonce(23)
       .setHash("0xabcd");
+
+    const tx: TransactionEvent = {
+      ...testTx,
+      chainId: Number(process.env.CHAIN_ID),
+      hash: testTx.hash,
+      from: testTx.hash,
+      to: testTx.to,
+      gasPrice: testTx.gasPrice,
+      timestamp: testTx.timestamp,
+      blockNumber: testTx.blockNumber,
+      blockHash: testTx.blockHash,
+      filterLog: function (eventAbi: string | string[], contractAddress?: string | string[] | undefined): LogDescription[] {
+        return [];
+      },
+      filterFunction: function (functionAbi: string | string[], contractAddress?: string | string[] | undefined): TransactionDescription[] {
+        return [];
+      }
+    }
     const mockContractAddress = "0xD5B2a1345290AA8F4c671676650B5a1cE16A8575";
     when(mockFetcher.getCode)
       .calledWith(mockContractAddress)
@@ -1260,7 +1537,7 @@ describe("Native Ice Phishing Bot test suite", () => {
     when(mockCalculateRate)
       .calledWith(1, BOT_ID, "NIP-5", ScanCountType.ContractCreationCount, 0)
       .mockReturnValue(0.0034231);
-    const findings: Finding[] = await handleTransaction(tx);
+    const findings: Finding[] = await handleTransaction(tx, mockProvider as unknown as ethers.JsonRpcProvider);
     expect(findings).toStrictEqual([
       testCreateCriticalSeverityFinding(
         "0xabcd",
@@ -1274,11 +1551,29 @@ describe("Native Ice Phishing Bot test suite", () => {
   it("should return a finding if a contract is deployed, the source code can't be fetched, but the bytecode contains a withdraw function and a payable function which has already created an alert", async () => {
     mockStoredData.alertedHashes.push("0xa9059cbb");
 
-    const tx: TestTransactionEvent = new TestTransactionEvent()
+    const testTx: TestTransactionEvent = new TestTransactionEvent()
       .setFrom(createAddress("0x0f"))
       .setTo(null)
       .setNonce(23)
       .setHash("0xabcd");
+    const tx: TransactionEvent = {
+      ...testTx,
+      chainId: Number(process.env.CHAIN_ID),
+      hash: testTx.hash,
+      from: testTx.hash,
+      to: testTx.to,
+      gasPrice: testTx.gasPrice,
+      timestamp: testTx.timestamp,
+      blockNumber: testTx.blockNumber,
+      blockHash: testTx.blockHash,
+      filterLog: function (eventAbi: string | string[], contractAddress?: string | string[] | undefined): LogDescription[] {
+        return [];
+      },
+      filterFunction: function (functionAbi: string | string[], contractAddress?: string | string[] | undefined): TransactionDescription[] {
+        return [];
+      }
+    }
+
     const mockContractAddress = "0xD5B2a1345290AA8F4c671676650B5a1cE16A8575";
     when(mockFetcher.getCode)
       .calledWith(mockContractAddress)
@@ -1296,7 +1591,7 @@ describe("Native Ice Phishing Bot test suite", () => {
     when(mockCalculateRate)
       .calledWith(1, BOT_ID, "NIP-5", ScanCountType.ContractCreationCount, 0)
       .mockReturnValueOnce(0.0034231);
-    const findings: Finding[] = await handleTransaction(tx);
+    const findings: Finding[] = await handleTransaction(tx, mockProvider as unknown as ethers.JsonRpcProvider);
     expect(findings).toStrictEqual([
       testCreateCriticalSeverityFinding(
         "0xabcd",
@@ -1312,7 +1607,7 @@ describe("Native Ice Phishing Bot test suite", () => {
       { hash: "hash15" },
       { hash: "hash25" },
     ]);
-    const tx: TestTransactionEvent = new TestTransactionEvent()
+    const testTx: TestTransactionEvent = new TestTransactionEvent()
       .setFrom(createAddress("0x0f"))
       .setTo(createAddress("0x01"))
       .setData(
@@ -1320,6 +1615,23 @@ describe("Native Ice Phishing Bot test suite", () => {
       )
       .setBlock(234)
       .setHash("0xabcd");
+    const tx: TransactionEvent = {
+      ...testTx,
+      chainId: Number(process.env.CHAIN_ID),
+      hash: testTx.hash,
+      from: testTx.hash,
+      to: testTx.to,
+      gasPrice: testTx.gasPrice,
+      timestamp: testTx.timestamp,
+      blockNumber: testTx.blockNumber,
+      blockHash: testTx.blockHash,
+      filterLog: function (eventAbi: string | string[], contractAddress?: string | string[] | undefined): LogDescription[] {
+        return [];
+      },
+      filterFunction: function (functionAbi: string | string[], contractAddress?: string | string[] | undefined): TransactionDescription[] {
+        return [];
+      }
+    }
 
     when(mockFetcher.getOwner)
       .calledWith(createAddress("0x01"), 234)
@@ -1337,7 +1649,7 @@ describe("Native Ice Phishing Bot test suite", () => {
       .calledWith(1, BOT_ID, "NIP-6", ScanCountType.CustomScanCount, 16) // 15 perf test withdrawals + 1 current
       .mockReturnValueOnce(0.0134231);
 
-    const findings: Finding[] = await handleTransaction(tx);
+    const findings: Finding[] = await handleTransaction(tx, mockProvider as unknown as ethers.JsonRpcProvider);
     const receiver = "0xbca7af384bc384f86d78e37516537b3fecb86bbc";
     // TODO: Figure out why we're not getting any findings here
     expect(findings).toStrictEqual([
@@ -1376,9 +1688,16 @@ describe("Native Ice Phishing Bot test suite", () => {
     mockPersistenceHelper.load.mockReturnValueOnce([]).mockReturnValueOnce([]);
     mockCalculateRate.mockReturnValueOnce(0.5134231);
 
-    const blockEvent: TestBlockEvent = new TestBlockEvent();
+    const testBlockEvent: TestBlockEvent = new TestBlockEvent();
 
-    const findings = await handleBlock(blockEvent);
+    const blockEvent: BlockEvent = {
+      ...testBlockEvent,
+      chainId: Number(process.env.CHAIN_ID),
+      blockHash: testBlockEvent.blockHash,
+      blockNumber: testBlockEvent.blockNumber
+    }
+
+    const findings = await handleBlock(blockEvent, mockProvider as unknown as ethers.JsonRpcProvider);
 
     expect(findings).toStrictEqual([
       testCreateCriticalNIPSeverityFinding("0x0f", ["0x01", "0x02"], 0.5134231),

@@ -5,7 +5,7 @@ import {
   Label,
   EntityType,
   ethers,
-} from "forta-agent";
+} from "@fortanetwork/forta-bot";
 import { Transfer } from "./utils";
 
 export const createFinding = (

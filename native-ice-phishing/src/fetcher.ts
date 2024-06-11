@@ -11,7 +11,7 @@ import {
 } from "./utils";
 import ErrorCache from "./error.cache";
 import * as util from "util";
-import { ethers } from "forta-agent";
+import { ethers } from "@fortanetwork/forta-bot";
 import { createErrorAlert } from "./findings";
 import { apiKeys } from "./storage";
 
