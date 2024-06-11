@@ -10,7 +10,7 @@ services:
   webdis:
     image: nicolas/webdis:latest
     command: /usr/local/bin/webdis /webdis/webdis.json
-    volumes:  # mount volume containing the config file
+    volumes:
       - ./webdis:/webdis
     container_name: webdis
     ports:
@@ -29,7 +29,7 @@ services:
     environment:
       - LOCAL_NODE=true
       - NODE_ENV=production
-      - REDIS_URL=redis://redis:6379/
+      - REDIS_URL=http://webdis:7379
       - SECRETS_FILE_PATH=/run/secrets/api_keys
     ports:
       - "3000:3000"
@@ -46,10 +46,10 @@ services:
     environment:
       - LOCAL_NODE=true
       - NODE_ENV=test
-      - REDIS_URL=redis://redis:6379/
+      - REDIS_URL=http://webdis:7379
       - SECRETS_FILE_PATH=/run/secrets/api_keys
     depends_on:
-      - redis
+      - webdis
     command: ["npm", "test"]
     secrets:
       - api_keys

@@ -1339,6 +1339,7 @@ describe("Native Ice Phishing Bot test suite", () => {
 
     const findings: Finding[] = await handleTransaction(tx);
     const receiver = "0xbca7af384bc384f86d78e37516537b3fecb86bbc";
+    // TODO: Figure out why we're not getting any findings here
     expect(findings).toStrictEqual([
       testCreateWithdrawalFinding(
         "0xabcd",
