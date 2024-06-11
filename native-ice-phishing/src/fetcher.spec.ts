@@ -1,12 +1,8 @@
 import { MockEthersProvider } from "forta-agent-tools/lib/test";
 import DataFetcher from "./fetcher";
 import { createAddress } from "forta-agent-tools";
-import fetch from "node-fetch";
 import { when } from "jest-when";
 import { apiKeys } from "./storage";
-
-jest.mock("node-fetch");
-const { Response } = jest.requireActual("node-fetch");
 
 // [code, address, isEOA]
 const TEST_RECEIVERS: [string, string, boolean][] = [
@@ -19,7 +15,7 @@ const TEST_RECEIVERS: [string, string, boolean][] = [
 
 const TEST_SIGNATURES: [string, string][] = [
   ["0x12345678", "transfer(address,uint256)"],
-  ["0x12345679", "transferFrom(address, address,uint256)"],
+  ["0x12345679", "transferFrom(address,address,uint256)"],
   ["0x12345670", "approve(address,uint256)"],
   ["0x12345671", "mint(address,uint256)"],
   ["0x12345672", "burn(address,uint256)"],
@@ -60,7 +56,7 @@ class MockEthersProviderExtended extends MockEthersProvider {
   }
 }
 
-describe("DatFetcher tests suite", () => {
+describe("DataFetcher tests suite", () => {
   const mockProvider: MockEthersProviderExtended =
     new MockEthersProviderExtended();
   let fetcher: DataFetcher;
@@ -91,7 +87,7 @@ describe("DatFetcher tests suite", () => {
   });
 
   it("should fetch function signature and use cache correctly", async () => {
-    const mockFetch = jest.mocked(fetch);
+    const mockFetch = jest.spyOn(global, 'fetch');
 
     for (let [input, sig] of TEST_SIGNATURES) {
       mockFetch.mockResolvedValueOnce(new Response(JSON.stringify(sig)));
@@ -112,7 +108,7 @@ describe("DatFetcher tests suite", () => {
     const mockTxFrom = createAddress("0x1238");
     const mockTxTo = createAddress("0x1239");
 
-    const mockFetch = jest.mocked(fetch);
+    const mockFetch = jest.spyOn(global, 'fetch');
     mockFetch.mockResolvedValueOnce(
       new Response(
         JSON.stringify({

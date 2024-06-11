@@ -1,6 +1,5 @@
 import * as dotenv from "dotenv";
 dotenv.config();
-import fetch from "node-fetch";
 import { getSecrets, apiKeys } from "./storage";
 
 export class PersistenceHelper {

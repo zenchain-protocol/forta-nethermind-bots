@@ -1,6 +1,5 @@
-import fetch from "node-fetch";
 import { providers } from "ethers";
-import LRU from "lru-cache";
+import { LRUCache } from 'lru-cache'
 import { EVM } from "evm";
 import { etherscanApis } from "./config";
 import {
@@ -18,11 +17,11 @@ import { apiKeys } from "./storage";
 
 export default class DataFetcher {
   provider: providers.Provider;
-  private eoaCache: LRU<string, boolean>;
-  private codeCache: LRU<string, string>;
-  private functionCache: LRU<string, string>;
-  private nonceCache: LRU<string, number>;
-  private ownerCache: LRU<string, string>;
+  private eoaCache: LRUCache<string, boolean>;
+  private codeCache: LRUCache<string, string>;
+  private functionCache: LRUCache<string, string>;
+  private nonceCache: LRUCache<string, number>;
+  private ownerCache: LRUCache<string, string>;
   private apiKeys: apiKeys;
   private signatureDbUrl: string =
     "https://raw.githubusercontent.com/ethereum-lists/4bytes/master/signatures/";
@@ -30,11 +29,11 @@ export default class DataFetcher {
   constructor(provider: providers.Provider, apiKeys: apiKeys) {
     this.apiKeys = apiKeys;
     this.provider = provider;
-    this.eoaCache = new LRU<string, boolean>({ max: 50000 });
-    this.codeCache = new LRU<string, string>({ max: 10000 });
-    this.nonceCache = new LRU<string, number>({ max: 50000 });
-    this.functionCache = new LRU<string, string>({ max: 10000 });
-    this.ownerCache = new LRU<string, string>({ max: 10000 });
+    this.eoaCache = new LRUCache<string, boolean>({ max: 50000 });
+    this.codeCache = new LRUCache<string, string>({ max: 10000 });
+    this.nonceCache = new LRUCache<string, number>({ max: 50000 });
+    this.functionCache = new LRUCache<string, string>({ max: 10000 });
+    this.ownerCache = new LRUCache<string, string>({ max: 10000 });
   }
 
   private getBlockExplorerKey = (chainId: number) => {
