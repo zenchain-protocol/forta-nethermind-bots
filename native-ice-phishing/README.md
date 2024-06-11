@@ -70,51 +70,51 @@ This bot monitors:
       - `entityType`: The type of the entity, always set to "Address"
       - `label`: The type of the label, always set to "Attacker"
       - `confidence`^: The confidence level of the receiver being an attacker (0-1), always set to 0.6
-  - NIP-3
-    - Fired when the receiver of a transaction is a contract, the value is non-zero, the function called is one that has previously created one NIP-1 alert, and the number of exposed contract functions is under a threshold.
-    - Severity is always set to "Low"
-    - Type is always set to "Suspicious"
-    - Metadata contains:
-      - `attacker`: The receiver of the transaction
-      - `victim`: The initiator of the transaction
-      - `funcSig`: The function signature in the transaction input
-      - `anomalyScore`: The anomaly score of the alert
-    - Labels contain:
-      - Label 1:
-        - `entity`: The transaction's hash
-        - `entityType`: The type of the entity, always set to "Transaction"
-        - `label`: The type of the label, always set to "Attack"
-        - `confidence`: The confidence level of the transaction being an attack (0-1), always set to 0.6
-      - Label 2:
-        - `entity`: The transaction initiator address
-        - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Victim"
-        - `confidence`^: The confidence level of the address being a victim (0-1), always set to 0.6
-      - Label 3:
-        - `entity`: The transaction receiver address
-        - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Attacker"
-        - `confidence`^: The confidence level of the receiver being an attacker (0-1), always set to 0.6
-  - NIP-4
-    - Fired when a suspicious EOA receives funds from an over a threshold number of different EOAs.
-    - Severity is always set to "High"
-    - Type is always set to "Suspicious"
-    - Metadata contains:
-      - `attacker`: The receiver of the transaction
-      - `victim`: The initiator of the transaction
-      - `funcSig`: The function signature in the transaction input
-      - `anomalyScore`: The anomaly score of the alert
-    - Labels contain:
-      - Label 1:
-        - `entity`: The transaction receiver address
-        - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Attacker"
-        - `confidence`^: The confidence level of the receiver being an attacker (0-1), always set to 0.5
-      - Label #:
-        - `entity`: The victim address
-        - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Victim"
-        - `confidence`^: The confidence level of the address being a victim (0-1), always set to 0.5
+- NIP-3
+  - Fired when the receiver of a transaction is a contract, the value is non-zero, the function called is one that has previously created one NIP-1 alert, and the number of exposed contract functions is under a threshold.
+  - Severity is always set to "Low"
+  - Type is always set to "Suspicious"
+  - Metadata contains:
+    - `attacker`: The receiver of the transaction
+    - `victim`: The initiator of the transaction
+    - `funcSig`: The function signature in the transaction input
+    - `anomalyScore`: The anomaly score of the alert
+  - Labels contain:
+    - Label 1:
+      - `entity`: The transaction's hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Attack"
+      - `confidence`: The confidence level of the transaction being an attack (0-1), always set to 0.6
+    - Label 2:
+      - `entity`: The transaction initiator address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Victim"
+      - `confidence`^: The confidence level of the address being a victim (0-1), always set to 0.6
+    - Label 3:
+      - `entity`: The transaction receiver address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`^: The confidence level of the receiver being an attacker (0-1), always set to 0.6
+- NIP-4
+  - Fired when a suspicious EOA receives funds from over a threshold number of different EOAs.
+  - Severity is always set to "High"
+  - Type is always set to "Suspicious"
+  - Metadata contains:
+    - `attacker`: The receiver of the transaction
+    - `victim`: The initiator of the transaction
+    - `funcSig`: The function signature in the transaction input
+    - `anomalyScore`: The anomaly score of the alert
+  - Labels contain:
+    - Label 1:
+      - `entity`: The transaction receiver address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`^: The confidence level of the receiver being an attacker (0-1), always set to 0.5
+    - Label 2:
+      - `entity`: The victim address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Victim"
+      - `confidence`^: The confidence level of the address being a victim (0-1), always set to 0.5
 - NIP-5
   - Fired when a contract is deployed with characteristics indicative of a potential native ice phishing attack.
   - Severity is always set to "Critical"
@@ -135,7 +135,6 @@ This bot monitors:
       - `label`: The type of the label, always set to "Attacker"
       - `confidence`^: The confidence level of the receiver being an attacker (0-1), always set to 0.9
 - NIP-6
-
   - Fired when there's a withdrawal from the owner of a contract used for a native ice phishing attack.
   - Severity is always set to "Critical"
   - Type is always set to "Suspicious"
@@ -156,86 +155,85 @@ This bot monitors:
       - `label`: The type of the label, always set to "Attacker"
       - `confidence`^: The confidence level of the receiver being an attacker (0-1), always set to 0.9
     - Label 3:
-      - `entity`: The withdrawl receiver address
+      - `entity`: The withdrawal receiver address
+      - `entityType
+
+`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`^: The confidence level of the receiver being an attacker (0-1), always set to 0.9
+- NIP-7
+  - Fired when a suspicious EOA receives funds from over a threshold number of different EOAs and has no other interactions with those EOAs for a week.
+  - Severity is always set to "Critical"
+  - Type is always set to "Suspicious"
+  - Metadata contains:
+    - `attacker`: The receiver of the transaction
+    - `victim`: The initiator of the transaction
+    - `funcSig`: The function signature in the transaction input
+    - `anomalyScore`: The anomaly score of the alert
+  - Labels contain:
+    - Label 1:
+      - `entity`: The transaction receiver address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`^: The confidence level of the receiver being an attacker (0-1), always set to 0.8
+    - Label 2:
+      - `entity`: The victim address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Victim"
+      - `confidence`^: The confidence level of the address being a victim (0-1), always set to 0.8
+- NIP-8
+  - Fired when a contract is deployed with characteristics indicative of a potential native & ERC20/ERC721 ice phishing attack (Using a Multicall and a Fallback function).
+  - Severity is always set to "Critical"
+  - Type is always set to "Suspicious"
+  - Metadata contains:
+    - `attacker`: The contract creator address
+    - `address`: The created contract address
+    - `anomalyScore`: The anomaly score of the alert
+  - Labels contain:
+    - Label 1:
+      - `entity`: The transaction's hash
+      - `entityType`: The type of the entity, always set to "Transaction"
+      - `label`: The type of the label, always set to "Attack"
+      - `confidence`: The confidence level of the transaction being an attack (0-1), always set to 0.9
+    - Label 2:
+      - `entity`: The contract creator address
       - `entityType`: The type of the entity, always set to "Address"
       - `label`: The type of the label, always set to "Attacker"
       - `confidence`^: The confidence level of the receiver being an attacker (0-1), always set to 0.9
-  - NIP-7
-    - Fired when a suspicious EOA receives funds from an over a threshold number of different EOAs and has no other interactions with those EOAs for a week.
-    - Severity is always set to "Critical"
-    - Type is always set to "Suspicious"
-    - Metadata contains:
-      - `attacker`: The receiver of the transaction
-      - `victim`: The initiator of the transaction
-      - `funcSig`: The function signature in the transaction input
-      - `anomalyScore`: The anomaly score of the alert
-    - Labels contain:
-      - Label 1:
-        - `entity`: The transaction receiver address
-        - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Attacker"
-        - `confidence`^: The confidence level of the receiver being an attacker (0-1), always set to 0.8
-      - Label #:
-        - `entity`: The victim address
-        - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Victim"
-        - `confidence`^: The confidence level of the address being a victim (0-1), always set to 0.8
-  - NIP-8
-
-    - Fired when a contract is deployed with characteristics indicative of a potential native & erc20/erc71 ice phishing attack (Using a Multicall and a Fallback function).
-    - Severity is always set to "Critical"
-    - Type is always set to "Suspicious"
-    - Metadata contains:
-      - `attacker`: The contract creator address
-      - `address`: The created contract address
-      - `anomalyScore`: The anomaly score of the alert
-    - Labels contain:
-      - Label 1:
-        - `entity`: The transaction's hash
-        - `entityType`: The type of the entity, always set to "Transaction"
-        - `label`: The type of the label, always set to "Attack"
-        - `confidence`: The confidence level of the transaction being an attack (0-1), always set to 0.9
-      - Label 2:
-        - `entity`: The contract creator address
-        - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Attacker"
-        - `confidence`^: The confidence level of the receiver being an attacker (0-1), always set to 0.9
-
-  - NIP-9
-
-    - Fired when a multicall is executed stealing ERC20 funds in a known scammer contract.
-    - Severity is always set to "Info"
-    - Type is always set to "Suspicious"
-    - Metadata contains:
-      - `attacker#`: The transaction initiator, the address that initiated the multicall, the contract that contains the multicall, and the fund recipient(s)
-      - `victim#`: The fund sender(s) (Only if known)
-      - `anomalyScore`: The anomaly score of the alert
-    - Labels contain:
-      - Label 1:
-        - `entity`: The transaction initiator address
-        - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Attacker"
-        - `confidence`: The confidence level of the transaction being an attack (0-1), always set to 0.9
-      - Label 2:
-        - `entity`: The address that invoked the multicall
-        - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Attacker"
-        - `confidence`: The confidence level of the transaction being an attack (0-1), always set to 0.9
-      - Label 3:
-        - `entity`: The contract that contained the multicall
-        - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Attacker"
-        - `confidence`: The confidence level of the transaction being an attack (0-1), always set to 0.9
-      - Label 4-#:
-        - `entity`: The recipient(s) address
-        - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Attacker"
-        - `confidence`^: The confidence level of the receiver being an attacker (0-1), always set to 0.9
-      - last Label(s):
-        - `entity`: The victim(s) address (only if known)
-        - `entityType`: The type of the entity, always set to "Address"
-        - `label`: The type of the label, always set to "Attacker"
-        - `confidence`^: The confidence level of the receiver being an attacker (0-1), always set to 0.9
+- NIP-9
+  - Fired when a multicall is executed stealing ERC20 funds in a known scammer contract.
+  - Severity is always set to "Info"
+  - Type is always set to "Suspicious"
+  - Metadata contains:
+    - `attacker`: The transaction initiator, the address that initiated the multicall, the contract that contains the multicall, and the fund recipient(s)
+    - `victim`: The fund sender(s) (Only if known)
+    - `anomalyScore`: The anomaly score of the alert
+  - Labels contain:
+    - Label 1:
+      - `entity`: The transaction initiator address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the transaction being an attack (0-1), always set to 0.9
+    - Label 2:
+      - `entity`: The address that invoked the multicall
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the transaction being an attack (0-1), always set to 0.9
+    - Label 3:
+      - `entity`: The contract that contained the multicall
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the transaction being an attack (0-1), always set to 0.9
+    - Label 4:
+      - `entity`: The recipient(s) address
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Attacker"
+      - `confidence`: The confidence level of the receiver being an attacker (0-1), always set to 0.9
+    - Label 5:
+      - `entity`: The victim(s) address (only if known)
+      - `entityType`: The type of the entity, always set to "Address"
+      - `label`: The type of the label, always set to "Victim"
+      - `confidence`: The confidence level of the address being a victim (0-1), always set to 0.9
 
 ## Test Data
 
@@ -245,3 +243,85 @@ The bot behaviour can be verified with the following transactions on Ethereum Ma
 - [0x80bb173bed260691b72117849f198fbf467238e6001e6ff772412c3179d2b2c6](https://etherscan.io/tx/0x80bb173bed260691b72117849f198fbf467238e6001e6ff772412c3179d2b2c6) (NIP-2 alert)
 - [0xa2df4630ee827040207d41e17daa371e2ae86ae191ff558284ac01a96abfb4e6](https://etherscan.io/tx/0xa2df4630ee827040207d41e17daa371e2ae86ae191ff558284ac01a96abfb4e6) (NIP-5 alert)
 - [0x4329c267d03999dc8f9f2f879a9e969381d926fddd802e4eadab8133780fe3c1](https://etherscan.io/tx/0x4329c267d03999dc8f9f2f879a9e969381d926fddd802e4eadab8133780fe3c1) (NIP-9 alert)
+
+## Running Locally
+
+To run this bot locally, follow these steps:
+
+1. **Clone the repository and navigate to the project directory:**
+
+   ```bash
+   git clone git@github.com:zenchain-protocol/forta-nethermind-bots.git
+   cd forta-nethermind-bots/native-ice-phishing
+   ```
+
+2. **Ensure you have Node Version Manager (NVM) installed and use the correct Node.js version:**
+
+   ```bash
+   nvm use
+   ```
+
+3. **Copy and configure the secrets file:**
+
+   Copy the example secrets file and fill in the required fields, especially the `Etherscan` API key and `generalApiKeys`.
+
+   ```bash
+   cp secrets.example.json secrets.json
+   ```
+
+   Open `secrets.json` and fill in the required values.
+
+4. **Set up Webdis configuration:**
+
+   Copy the example Webdis configuration file and modify it as necessary.
+
+   ```bash
+   cp webdis.example.json webdis.json
+   ```
+
+   Edit `webdis.json` to match your desired configuration for the Redis key-value store.
+
+5. **Build and start the Docker containers:**
+
+   Build the Docker images with `docker-compose`.
+
+   ```bash
+   docker-compose build
+   ```
+
+   Start the bot in detached mode:
+
+   ```bash
+   docker-compose up -d native-ice-phishing-detection-bot
+   ```
+
+6. **Run tests:**
+
+   Execute the tests using the test runner container:
+
+   ```bash
+   docker-compose run --rm test-runner
+   ```
+
+   To test different transactions, you can modify the `command` in the `docker-compose.yml` file:
+
+   ```yaml
+   test-runner:
+     command: ["npm", "run", "tx", "0x4329c267d03999dc8f9f2f879a9e969381d926fddd802e4eadab8133780fe3c1"]
+   ```
+
+   Replace `0x4329c267d03999dc8f9f2f879a9e969381d926fddd802e4eadab8133780fe3c1` with the hash of the transaction you want to test.
+
+7. **Monitor logs and container status:**
+
+   To see logs from the bot, use:
+
+   ```bash
+   docker-compose logs -f native-ice-phishing-detection-bot
+   ```
+
+   Check the status of the containers:
+
+   ```bash
+   docker-compose ps
+   ```
