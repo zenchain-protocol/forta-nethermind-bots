@@ -15,6 +15,6 @@ COPY --from=builder /app/dist ./src
 COPY package*.json ./
 COPY ./LICENSE ./
 # TODO: Comment out for production so the scan node's keys are used
-COPY forta.config.json /root/.forta/forta.config.json
+COPY forta.config.json ./src/forta.config.json
 RUN npm ci --production
 CMD [ "npm", "run", "start:prod" ]

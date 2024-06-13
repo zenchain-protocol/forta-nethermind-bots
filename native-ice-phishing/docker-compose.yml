@@ -1,4 +1,55 @@
 services:
+  alice:
+    image: krisbit/zenchain-testnet
+    ports:
+      - "9944:9944"
+      - "9615:9615"
+    command:
+      - "./usr/bin/zenchain-node"
+      - "--node-key=0000000000000000000000000000000000000000000000000000000000000001"
+      - "--base-path=/tmp/alice"
+      - "--chain=local"
+      - "--port=30333"
+      - "--validator"
+      - "--alice"
+      - "--bootnodes=/dns/bob/tcp/30333/p2p/12D3KooWHdiAxVd8uMQR1hGWXccidmfCwLqcMpGwR6QcTP6QRMuD"
+      - "--unsafe-rpc-external"
+      - "--log=sub-libp2p=trace"
+      - "--rpc-cors=all"
+
+  bob:
+    image: krisbit/zenchain-testnet
+    ports:
+      - "9945:9944"
+    command:
+      - "./usr/bin/zenchain-node"
+      - "--node-key=0000000000000000000000000000000000000000000000000000000000000002"
+      - "--base-path=/tmp/bob"
+      - "--chain=local"
+      - "--port=30333"
+      - "--validator"
+      - "--bob"
+      - "--bootnodes=/dns/alice/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp"
+      - "--rpc-cors=all"
+      - "--unsafe-rpc-external"
+      - "--log=sub-libp2p=trace"
+  
+  dave:
+    image: krisbit/zenchain-testnet
+    ports:
+      - "9946:9944"
+    command:
+      - "./usr/bin/zenchain-node"
+      - "--node-key=0000000000000000000000000000000000000000000000000000000000000003"
+      - "--base-path=/tmp/light"
+      - "--chain=local"
+      - "--port=30333"
+      - "--bootnodes=/dns/alice/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp"
+      - "--bootnodes=/dns/bob/tcp/30333/p2p/12D3KooWHdiAxVd8uMQR1hGWXccidmfCwLqcMpGwR6QcTP6QRMuD"
+      - "--rpc-cors=all"
+      - "--unsafe-rpc-external"
+      - "--log=sub-libp2p=trace"
+
   redis:
     image: redis:latest
     container_name: redis
@@ -31,12 +82,15 @@ services:
       - NODE_ENV=production
       - REDIS_URL=http://webdis:7379
       - SECRETS_FILE_PATH=/run/secrets/api_keys
-      - CHAIN_ID=1
-      - EVM_RPC=https://cloudflare-eth.com/
+      - CHAIN_ID=8408 #1 for Ethereum 
+      - EVM_RPC=http://alice:9944/ #https://cloudflare-eth.com for Ethereum 
     ports:
       - "3000:3000"
     depends_on:
       - webdis
+      - alice
+      - bob
+      - dave
     secrets:
       - api_keys
 
@@ -50,10 +104,13 @@ services:
       - NODE_ENV=test
       - REDIS_URL=http://webdis:7379
       - SECRETS_FILE_PATH=/run/secrets/api_keys
-      - CHAIN_ID=1
-      - EVM_RPC=https://cloudflare-eth.com/
+      - CHAIN_ID=8408 #1 for Ethereum 
+      - EVM_RPC=http://alice:9944/ #https://cloudflare-eth.com for Ethereum 
     depends_on:
       - webdis
+      - alice
+      - bob
+      - dave
     command: ["npm", "run", "test"]
     secrets:
       - api_keys
