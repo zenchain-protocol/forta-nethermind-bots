@@ -1,4 +1,3 @@
-import { providers } from "ethers";
 import { LRUCache } from 'lru-cache'
 import { EVM } from "evm";
 import { etherscanApis } from "./config";
@@ -16,7 +15,7 @@ import { createErrorAlert } from "./findings";
 import { apiKeys } from "./storage";
 
 export default class DataFetcher {
-  provider: providers.Provider;
+  provider: ethers.JsonRpcProvider | undefined;
   private eoaCache: LRUCache<string, boolean>;
   private codeCache: LRUCache<string, string>;
   private functionCache: LRUCache<string, string>;
@@ -26,7 +25,7 @@ export default class DataFetcher {
   private signatureDbUrl: string =
     "https://raw.githubusercontent.com/ethereum-lists/4bytes/master/signatures/";
 
-  constructor(provider: providers.Provider, apiKeys: apiKeys) {
+  constructor(provider: ethers.JsonRpcProvider | undefined, apiKeys: apiKeys) {
     this.apiKeys = apiKeys;
     this.provider = provider;
     this.eoaCache = new LRUCache<string, boolean>({ max: 50000 });
@@ -34,6 +33,10 @@ export default class DataFetcher {
     this.nonceCache = new LRUCache<string, number>({ max: 50000 });
     this.functionCache = new LRUCache<string, string>({ max: 10000 });
     this.ownerCache = new LRUCache<string, string>({ max: 10000 });
+  }
+
+  setProvider(provider: ethers.JsonRpcProvider) {
+    this.provider = provider;
   }
 
   private getBlockExplorerKey = (chainId: number) => {
@@ -65,9 +68,8 @@ export default class DataFetcher {
   ) => {
     const { urlAccount } = etherscanApis[chainId];
     const key = this.getBlockExplorerKey(chainId);
-    return `${urlAccount}&address=${address}&startblock=0&endblock=99999999&page=1&offset=${
-      offset + 1
-    }&sort=asc&apikey=${key}`;
+    return `${urlAccount}&address=${address}&startblock=0&endblock=99999999&page=1&offset=${offset + 1
+      }&sort=asc&apikey=${key}`;
   };
 
   private getEtherscanAddressInternalTxsUrl = (
@@ -77,9 +79,8 @@ export default class DataFetcher {
   ) => {
     const { urlAccountInternalTxs } = etherscanApis[chainId];
     const key = this.getBlockExplorerKey(chainId);
-    return `${urlAccountInternalTxs}&address=${address}&startblock=0&endblock=99999999&page=1&offset=${
-      offset + 1
-    }&sort=asc&apikey=${key}`;
+    return `${urlAccountInternalTxs}&address=${address}&startblock=0&endblock=99999999&page=1&offset=${offset + 1
+      }&sort=asc&apikey=${key}`;
   };
 
   private getSourceCodeUrl = (address: string, chainId: number) => {
@@ -105,6 +106,8 @@ export default class DataFetcher {
     let code;
     let tries = 0;
     const maxTries = 3;
+
+    if (!this.provider) throw new Error("Provider is not set");
 
     while (tries < maxTries) {
       try {
@@ -139,9 +142,11 @@ export default class DataFetcher {
     let tries = 0;
     const maxTries = 3;
 
+    if (!this.provider) throw new Error("Provider is not set");
+
     while (tries < maxTries) {
       try {
-        storageSlot = await this.provider.getStorageAt(
+        storageSlot = await this.provider.getStorage(
           address,
           slot,
           blockNumber
@@ -244,6 +249,8 @@ export default class DataFetcher {
     let nonce = 100000;
     let tries = 0;
     const maxTries = 3;
+
+    if (!this.provider) throw new Error("Provider is not set");
 
     while (tries < maxTries) {
       try {

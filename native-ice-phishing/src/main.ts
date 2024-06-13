@@ -1,23 +1,22 @@
 import { runHealthCheck, scanEthereum } from "@fortanetwork/forta-bot";
-import handleBlock from "./agent";
-import handleTransaction from "./agent";
-import initialize from "./agent";
+import agent from "./agent"; // Ensure the default export is being used
 
+const { initialize, handleTransaction, handleBlock } = agent;
 
 async function main() {
-    // TODO: Figure out how to migrate these function definitions to V2 
-    const initializeResponse = await initialize();
+    // Initialize environment and configurations
+    const _ = await initialize();
 
     scanEthereum({
         rpcUrl: process.env.EVM_RPC!,
         handleTransaction: handleTransaction,
         handleBlock: handleBlock,
-    })
+    });
 
-    runHealthCheck()
+    runHealthCheck();
 }
 
-// only run main() method if this file is directly invoked (vs imported for testing)
+// Only run the main() method if this file is directly invoked (vs imported for testing)
 if (require.main === module) {
     main();
 }
