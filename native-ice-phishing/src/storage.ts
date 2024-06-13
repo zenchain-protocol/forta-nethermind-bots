@@ -14,6 +14,7 @@ export type apiKeys = {
       fantomscanApiKeys: string[];
       arbiscanApiKeys: string[];
       snowtraceApiKeys: string[];
+      zenchainApiKeys: string[];
     };
   };
   generalApiKeys: {

@@ -65,4 +65,12 @@ export const etherscanApis: etherscanApisInterface = {
       "https://api.snowtrace.io/api?module=contract&action=getsourcecode",
     logs: "https://api.snowtrace.io/api?module=logs&action=getLogs",
   },
+  8408: {
+    urlAccount: `${process.env.ARBITRARY_BLOCKSCOUT_ENDPOINT}api?module=account&action=txlist`,
+    urlAccountInternalTxs:
+      `${process.env.ARBITRARY_BLOCKSCOUT_ENDPOINT}api?module=account&action=txlistinternal`,
+    sourceCode:
+      `${process.env.ARBITRARY_BLOCKSCOUT_ENDPOINT}api?module=contract&action=getsourcecode`,
+    logs: `${process.env.ARBITRARY_BLOCKSCOUT_ENDPOINT}api?module=logs&action=getLogs`,
+  }
 };
