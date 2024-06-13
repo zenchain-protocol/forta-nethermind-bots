@@ -58,7 +58,7 @@ import { PersistenceHelper } from "./persistence.helper";
 import ErrorCache from "./error.cache";
 import { getSecrets, apiKeys } from "./storage";
 
-let chainId: number = 0;
+let chainId: number = Number(process.env.CHAIN_ID);
 let txWithInputDataCount = 0;
 let transfersCount = 0;
 let contractCreationsCount = 0;
@@ -157,7 +157,7 @@ export async function createNewDataFetcher(): Promise<DataFetcher> {
   return new DataFetcher(undefined, apiKeys);
 }
 
-const provideInitialize = (
+export const provideInitialize = (
   persistenceHelper: PersistenceHelper,
   storedData: Data,
   databaseKeys: {
@@ -177,11 +177,11 @@ const provideInitialize = (
     process.env["ZETTABLOCK_API_KEY"] = ZETTABLOCK_API_KEY;
 
     //  Optimism, Fantom & Avalanche not yet supported by bot-alert-rate package
-    isRelevantChain = [10, 250, 43114].includes(Number(process.env.CHAIN_ID));
+    isRelevantChain = [10, 250, 43114].includes(chainId);
 
-    databaseKeys.transfersKey += `-${process.env.CHAIN_ID}`;
-    databaseKeys.alertedAddressesKey += `-${process.env.CHAIN_ID}`;
-    databaseKeys.alertedAddressesCriticalKey += `-${process.env.CHAIN_ID}`;
+    databaseKeys.transfersKey += `-${chainId}`;
+    databaseKeys.alertedAddressesKey += `-${chainId}`;
+    databaseKeys.alertedAddressesCriticalKey += `-${chainId}`;
 
     storedData.nativeTransfers = await persistenceHelper.load(
       databaseKeys.transfersKey
@@ -285,7 +285,7 @@ const provideInitialize = (
   };
 };
 
-const provideHandleTransaction =
+export const provideHandleTransaction =
   (
     persistenceHelper: PersistenceHelper,
     databaseKeys: {
@@ -1081,7 +1081,7 @@ const provideHandleTransaction =
     };
   };
 
-const provideHandleBlock =
+export const provideHandleBlock =
   (
     persistenceHelper: PersistenceHelper,
     storedData: Data,

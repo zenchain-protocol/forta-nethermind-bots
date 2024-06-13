@@ -31,6 +31,8 @@ services:
       - NODE_ENV=production
       - REDIS_URL=http://webdis:7379
       - SECRETS_FILE_PATH=/run/secrets/api_keys
+      - CHAIN_ID=1
+      - EVM_RPC=https://cloudflare-eth.com/
     ports:
       - "3000:3000"
     depends_on:
@@ -48,9 +50,11 @@ services:
       - NODE_ENV=test
       - REDIS_URL=http://webdis:7379
       - SECRETS_FILE_PATH=/run/secrets/api_keys
+      - CHAIN_ID=1
+      - EVM_RPC=https://cloudflare-eth.com/
     depends_on:
       - webdis
-    command: ["npm", "test"]
+    command: ["npm", "run", "test"]
     secrets:
       - api_keys
 

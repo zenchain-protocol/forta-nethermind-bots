@@ -102,21 +102,19 @@ export const filterConflictingEntries: (transfers: Transfer[]) => Transfer[] = (
       const isFromSame = otherTransfer.from === transfer.from;
       if (!isFromSame) return false;
 
+      // Convert the values to BigInt
+      const transferValue = BigInt(transfer.value);
+      const otherTransferValue = BigInt(otherTransfer.value);
+
+      // Calculate bounds
+      const lowerBound = (otherTransferValue * 8n) / 10n;
+      const upperBound = (otherTransferValue * 12n) / 10n;
+
       // Check if transfer value is out of range (80% - 120%)
-      const lowerBound = ethers.BigNumber.from(otherTransfer.value)
-        .mul(8)
-        .div(10);
-      const upperBound = ethers.BigNumber.from(otherTransfer.value)
-        .mul(12)
-        .div(10);
-      const bnValue = ethers.BigNumber.from(transfer.value);
-      const isValueOutOfRange =
-        bnValue.lt(lowerBound) || bnValue.gt(upperBound);
+      const isValueOutOfRange = transferValue < lowerBound || transferValue > upperBound;
 
       // Check if transfer value is unique
-      const isValueUnique = !ethers.BigNumber.from(otherTransfer.value).eq(
-        bnValue
-      );
+      const isValueUnique = transferValue !== otherTransferValue;
 
       // Check if latestTo is unique
       const isLatestToUnique = otherTransfer.latestTo !== transfer.latestTo;
@@ -133,10 +131,10 @@ export const filterConflictingEntries: (transfers: Transfer[]) => Transfer[] = (
   });
 };
 
-export const checkRoundValue = (num: ethers.BigNumber): boolean => {
-  const divisor = ethers.BigNumber.from("1000000000000000000"); // equivalent to 10^18
-  const quotient = num.div(divisor);
-  return quotient.mul(divisor).eq(num);
+export const checkRoundValue = (num: bigint): boolean => {
+  const divisor = 10n ** 18n; // equivalent to 10^18
+  const quotient = num / divisor;
+  return quotient * divisor === num;
 };
 
 export const isKeywordPresent = (labels: string[]) => {

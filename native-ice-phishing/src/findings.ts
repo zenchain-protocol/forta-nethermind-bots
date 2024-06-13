@@ -67,8 +67,8 @@ export const createLowSeverityFinding = (
   anomalyScore: number
 ): Finding => {
   const alertId = "NIP-3";
-  const uniqueKey = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(from + to + funcSig + alertId)
+  const uniqueKey = ethers.keccak256(
+    ethers.toUtf8Bytes(from + to + funcSig + alertId)
   );
 
   return Finding.fromObject({
@@ -121,8 +121,8 @@ export const createHighSeverityFinding = (
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
-  const uniqueKey = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(
+  const uniqueKey = ethers.keccak256(
+    ethers.toUtf8Bytes(
       to + alertId + currentDate + currentMonth + currentYear
     )
   );
@@ -332,8 +332,8 @@ export const createCriticalNIPSeverityFinding = (
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
-  const uniqueKey = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(
+  const uniqueKey = ethers.keccak256(
+    ethers.toUtf8Bytes(
       attacker + alertId + currentDate + currentMonth + currentYear
     )
   );
@@ -391,8 +391,8 @@ export const createMulticallPhishingFinding = (
 
   const attackersString = attackers.join(",");
 
-  const uniqueKey = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes(
+  const uniqueKey = ethers.keccak256(
+    ethers.toUtf8Bytes(
       attackersString + alertId + currentDate + currentMonth + currentYear
     )
   );
