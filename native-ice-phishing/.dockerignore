@@ -2,4 +2,3 @@ node_modules
 dist
 # TO-DO: Uncomment for production deploy so the Scan node's keys are used
 # forta.config.json
-secrets.json

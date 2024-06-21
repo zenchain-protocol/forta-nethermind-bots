@@ -1,5 +1,3 @@
 node_modules
 dist
 forta.config.json
-secrets.json
-webdis.json

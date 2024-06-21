@@ -1,11 +1,11 @@
 services:
   alice:
-    image: krisbit/zenchain-testnet
+    image: krisbit/zenchain-testnet #your-image-rpo/your-evm-node-image
     ports:
       - "9944:9944"
       - "9615:9615"
     command:
-      - "./usr/bin/zenchain-node"
+      - "./usr/bin/zenchain-node" #./user/bin/your-evm-node-binary
       - "--node-key=0000000000000000000000000000000000000000000000000000000000000001"
       - "--base-path=/tmp/alice"
       - "--chain=local"
@@ -18,11 +18,11 @@ services:
       - "--rpc-cors=all"
 
   bob:
-    image: krisbit/zenchain-testnet
+    image: krisbit/zenchain-testnet #your-image-rpo/your-evm-node-image
     ports:
       - "9945:9944"
     command:
-      - "./usr/bin/zenchain-node"
+      - "./usr/bin/zenchain-node" #./user/bin/your-evm-node-binary
       - "--node-key=0000000000000000000000000000000000000000000000000000000000000002"
       - "--base-path=/tmp/bob"
       - "--chain=local"
@@ -35,11 +35,11 @@ services:
       - "--log=sub-libp2p=trace"
   
   dave:
-    image: krisbit/zenchain-testnet
+    image: krisbit/zenchain-testnet #your-image-rpo/your-evm-node-image
     ports:
       - "9946:9944"
     command:
-      - "./usr/bin/zenchain-node"
+      - "./usr/bin/zenchain-node" #./user/bin/your-evm-node-binary
       - "--node-key=0000000000000000000000000000000000000000000000000000000000000003"
       - "--base-path=/tmp/light"
       - "--chain=local"
@@ -52,25 +52,26 @@ services:
 
   redis:
     image: redis:latest
-    container_name: redis
+    command: redis-server --requirepass your_redis_password
     ports:
       - "6379:6379"
     volumes:
-      - redis-data:/data
+      - redis_data:/data
 
-  webdis:
-    image: nicolas/webdis:latest
-    command: /usr/local/bin/webdis /webdis/webdis.json
-    volumes:
-      - ./webdis:/webdis
-    container_name: webdis
+  api:
+    build: https://github.com/zenchain-protocol/forta-storage.git
     ports:
-      - "7379:7379"
+      - "8080:8080"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: your_redis_password
+      NODE_ENV: development # or production, depending on what you want to test
+      NODE_PORT: 8080
+      VALUE_ZENCHAIN_API_KEY: example_zenchain_api_key
+      VALUE_ZETTABLOCK_API_KEY: example_zettablock_api_key
     depends_on:
       - redis
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
 
   native-ice-phishing-detection-bot:
     build:
@@ -78,21 +79,19 @@ services:
       dockerfile: Dockerfile
     container_name: native-ice-phishing-detection-bot
     environment:
-      - LOCAL_NODE=true
-      - NODE_ENV=production
-      - REDIS_URL=http://webdis:7379
-      - SECRETS_FILE_PATH=/run/secrets/api_keys
-      - CHAIN_ID=8408 #1 for Ethereum 
-      - EVM_RPC=http://alice:9944/ #https://cloudflare-eth.com for Ethereum 
+      ARBITRARY_BLOCKSCOUT_ENDPOINT: https://eth.blockscout.com #https://arbitrary.blockscout.com
+      CHAIN_ID: 8408 #1 for Ethereum
+      EVM_RPC: http://alice:9944/ #https://cloudflare-eth.com for Ethereum 
+      LOCAL_NODE: true
+      NODE_ENV: development # or production, depending on what you want to test
+      STORAGE_API_URL: http://api:8080
     ports:
       - "3000:3000"
     depends_on:
-      - webdis
+      - api
       - alice
       - bob
       - dave
-    secrets:
-      - api_keys
 
   test-runner:
     build:
@@ -100,24 +99,15 @@ services:
       dockerfile: Dockerfile.test
     container_name: test-runner
     environment:
-      - LOCAL_NODE=true
-      - NODE_ENV=test
-      - REDIS_URL=http://webdis:7379
-      - SECRETS_FILE_PATH=/run/secrets/api_keys
-      - CHAIN_ID=8408 #1 for Ethereum 
-      - EVM_RPC=http://alice:9944/ #https://cloudflare-eth.com for Ethereum 
+      ARBITRARY_BLOCKSCOUT_ENDPOINT: https://eth.blockscout.com #https://arbitrary.blockscout.com
+      CHAIN_ID: 8408 #1 for Ethereum
+      EVM_RPC: http://alice:9944/ #https://cloudflare-eth.com for Ethereum 
+      LOCAL_NODE: true
+      NODE_ENV: development # or production, depending on what you want to test
+      STORAGE_API_URL: http://api:8080
     depends_on:
-      - webdis
-      - alice
-      - bob
-      - dave
+      - native-ice-phishing-detection-bot
     command: ["npm", "run", "test"]
-    secrets:
-      - api_keys
 
 volumes:
-  redis-data:
-
-secrets:
-  api_keys:
-    file: ./secrets.json
+  redis_data:

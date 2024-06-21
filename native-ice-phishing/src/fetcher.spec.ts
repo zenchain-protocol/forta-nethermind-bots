@@ -31,12 +31,12 @@ const testKeys: apiKeys = {
       fantomscanApiKeys: ["Test8"],
       arbiscanApiKeys: ["Test9"],
       snowtraceApiKeys: ["Test10"],
+      zenchainApiKeys: ["Test11"]
     },
   },
   generalApiKeys: {
-    ETHERSCAN_METADATA_TOKEN: "Test11",
-    REDIS_BASIC_AUTH: "",
-    ZETTABLOCK: ["Test12"],
+    ETHERSCAN_METADATA_TOKEN: "Test12",
+    ZETTABLOCK: ["Test13"],
   },
 };
 

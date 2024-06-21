@@ -261,32 +261,12 @@ To run this bot locally, follow these steps:
    nvm use
    ```
 
-3. **Copy and configure the secrets file:**
-
-   Copy the example secrets file and fill in the required fields, especially the `Etherscan` API key and `generalApiKeys`.
-
-   ```bash
-   cp secrets.example.json secrets.json
-   ```
-
-   Open `secrets.json` and fill in the required values.
-
-4. **Set up Webdis configuration:**
-
-   Copy the example Webdis configuration file and modify it as necessary.
-
-   ```bash
-   cp webdis.example.json webdis.json
-   ```
-
-   Edit `webdis.json` to match your desired configuration for the Redis key-value store.
-
-5. **Build and start the Docker containers:**
+3. **Build and start the Docker containers:**
 
    Build the Docker images with `docker-compose`.
 
    ```bash
-   docker-compose build
+   docker-compose build --build-arg INSTALL_DEV=true --build-arg NODE_ENV=development
    ```
 
    Start the bot in detached mode:
@@ -295,7 +275,7 @@ To run this bot locally, follow these steps:
    docker-compose up -d native-ice-phishing-detection-bot
    ```
 
-6. **Run tests:**
+4. **Run tests:**
 
    Execute the tests using the test runner container:
 
@@ -312,7 +292,7 @@ To run this bot locally, follow these steps:
 
    Replace `0x4329c267d03999dc8f9f2f879a9e969381d926fddd802e4eadab8133780fe3c1` with the hash of the transaction you want to test.
 
-7. **Monitor logs and container status:**
+5. **Monitor logs and container status:**
 
    To see logs from the bot, use:
 

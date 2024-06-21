@@ -56,7 +56,7 @@ import {
 } from "./utils";
 import { PersistenceHelper } from "./persistence.helper";
 import ErrorCache from "./error.cache";
-import { getSecrets, apiKeys } from "./storage";
+import { getApiKeys, apiKeys } from "./storage";
 
 let chainId: number = Number(process.env.CHAIN_ID);
 let txWithInputDataCount = 0;
@@ -86,7 +86,7 @@ let lastTimestamp = 0;
 let lastExecutedMinute = 0;
 
 export const BOT_ID = process.env.BOT_ID || "";
-const DATABASE_URL = process.env.REDIS_URL || "";
+const DATABASE_URL = process.env.STORAGE_API_URL || "";
 
 const DATABASE_OBJECT_KEYS = {
   transfersKey: "nm-native-icephishing-bot-objects-v7",
@@ -153,7 +153,7 @@ const getPastAlertsOncePerDay = async () => {
 let dataFetcher: DataFetcher;
 
 export async function createNewDataFetcher(): Promise<DataFetcher> {
-  const apiKeys = (await getSecrets()) as apiKeys;
+  const apiKeys = (await getApiKeys()) as apiKeys;
   return new DataFetcher(undefined, apiKeys);
 }
 
@@ -171,7 +171,7 @@ export const provideInitialize = (
   return async () => {
     dataFetcher = await dataFetcherCreator();
 
-    const ZETTABLOCK_API_KEY = ((await getSecrets()) as apiKeys).generalApiKeys
+    const ZETTABLOCK_API_KEY = ((await getApiKeys()) as apiKeys).generalApiKeys
       .ZETTABLOCK[0];
 
     process.env["ZETTABLOCK_API_KEY"] = ZETTABLOCK_API_KEY;
