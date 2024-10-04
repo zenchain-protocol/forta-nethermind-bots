@@ -43,7 +43,7 @@
     "start": "npm run start:dev",
     "start:dev": "npm run build && nodemon --watch src --watch forta.config.json -e js,ts,json  --exec \"node ./dist/main.js\"",
     "start:prod": "node ./src/main.js",
-    "tx": "npm run build && npx forta-bot run --chainId 1 --tx",
+    "tx": "npm run build && npx forta-bot run --chainId 8408 --tx",
     "block": "npm run build && npx forta-bot run --block",
     "range": "npm run build && npx forta-bot run --range",
     "alert": "npm run build && npx forta-bot run --alert",

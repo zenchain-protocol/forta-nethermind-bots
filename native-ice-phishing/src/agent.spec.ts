@@ -25,7 +25,6 @@ import {
   provideInitialize,
   provideHandleTransaction,
   provideHandleBlock,
-  BOT_ID,
   createNewDataFetcher,
 } from "./agent";
 import { when } from "jest-when";
@@ -37,6 +36,7 @@ import { TransactionDescription } from "@fortanetwork/forta-bot/dist/transaction
 
 jest.setTimeout(400000);
 
+const BOT_ID = "1";
 const REAL_DATABASE_URL = process.env.REDIS_URL || "";
 const REAL_DATABASE_OBJECT_KEYS = {
   transfersKey: "nm-native-icephishing-bot-objects-v7",

@@ -10,7 +10,7 @@ import {
   Alert,
   AlertQueryResponse,
   HandleBlock,
-  HandleTransaction,
+  HandleTransaction, fetchJwt, decodeJwt,
 } from "@fortanetwork/forta-bot";
 import { ScanCountType } from "bot-alert-rate";
 import calculateAlertRate from "bot-alert-rate";
@@ -85,7 +85,6 @@ let isInitialized = false;
 let lastTimestamp = 0;
 let lastExecutedMinute = 0;
 
-export const BOT_ID = process.env.BOT_ID || "";
 const DATABASE_URL = process.env.STORAGE_API_URL || "";
 
 const DATABASE_OBJECT_KEYS = {
@@ -95,7 +94,7 @@ const DATABASE_OBJECT_KEYS = {
     "nm-native-icephishing-bot-objects-v3-alerted-critical",
 };
 
-const getPastAlertsOncePerDay = async () => {
+const getPastAlertsOncePerDay = async (botId: string) => {
   const today = new Date();
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(today.getDate() - 7);
@@ -105,7 +104,7 @@ const getPastAlertsOncePerDay = async () => {
   twoHundredDaysAgo.setDate(today.getDate() - 200);
 
   const nip4Query: AlertQueryOptions = {
-    botIds: [BOT_ID],
+    botIds: [botId],
     alertId: "NIP-4",
     chainId,
     blockDateRange: {
@@ -116,7 +115,7 @@ const getPastAlertsOncePerDay = async () => {
   };
 
   const nip8Query: AlertQueryOptions = {
-    botIds: [BOT_ID],
+    botIds: [botId],
     alertId: "NIP-8",
     chainId,
     blockDateRange: {
@@ -170,6 +169,10 @@ export const provideInitialize = (
 ): Initialize => {
   return async () => {
     dataFetcher = await dataFetcherCreator();
+
+    const jwt = await fetchJwt({ key: "value" }, new Date(Date.now() + 5000));
+    const decodedTokenData = decodeJwt(jwt);
+    const botId = decodedTokenData.payload['bot-id'];
 
     const ZETTABLOCK_API_KEY = ((await getApiKeys()) as apiKeys).generalApiKeys
       .ZETTABLOCK[0];
@@ -230,7 +233,7 @@ export const provideInitialize = (
     }
 
     const query: AlertQueryOptions = {
-      botIds: [BOT_ID],
+      botIds: [botId],
       alertId: "NIP-1",
       blockDateRange: {
         startDate: new Date(0, 0, 0),
@@ -264,7 +267,7 @@ export const provideInitialize = (
     );
 
     const initializeAndGetPastAlerts = async () => {
-      await getPastAlertsOncePerDay();
+      await getPastAlertsOncePerDay(botId);
     };
 
     // Call the function once to await it
@@ -275,7 +278,7 @@ export const provideInitialize = (
       alertConfig: {
         subscriptions: [
           {
-            botId: BOT_ID,
+            botId: botId,
             chainId: chainId,
             alertIds: ["NIP-4", "NIP-7"],
           },
@@ -298,6 +301,11 @@ export const provideHandleTransaction =
   ): HandleTransaction => {
     return async (txEvent: TransactionEvent, provider: ethers.JsonRpcProvider) => {
       dataFetcher.setProvider(provider);
+
+      const jwt = await fetchJwt({ key: "value" }, new Date(Date.now() + 5000));
+      const decodedTokenData = decodeJwt(jwt);
+      const botId = decodedTokenData.payload['bot-id'];
+
       const findings: Finding[] = [];
       let { nativeTransfers, alertedAddresses, alertedHashes } = storedData;
       const {
@@ -366,7 +374,7 @@ export const provideHandleTransaction =
         if (attackers.length) {
           const anomalyScore = await calculateAlertRate(
             Number(chainId),
-            BOT_ID,
+            botId,
             "NIP-9",
             isRelevantChain
               ? ScanCountType.CustomScanCount
@@ -431,7 +439,7 @@ export const provideHandleTransaction =
         if (attackers.length && victims.length) {
           const anomalyScore = await calculateAlertRate(
             Number(chainId),
-            BOT_ID,
+            botId,
             "NIP-9",
             isRelevantChain
               ? ScanCountType.CustomScanCount
@@ -496,7 +504,7 @@ export const provideHandleTransaction =
           if (conditionMetCount === 1) {
             const anomalyScore = await calculateAlertRate(
               Number(chainId),
-              BOT_ID,
+              botId,
               "NIP-6",
               ScanCountType.CustomScanCount,
               withdrawalsCount
@@ -528,7 +536,7 @@ export const provideHandleTransaction =
               if (hasValidEntries) {
                 const anomalyScore = await calculateAlertRate(
                   Number(chainId),
-                  BOT_ID,
+                  botId,
                   "NIP-6",
                   ScanCountType.CustomScanCount,
                   withdrawalsCount // No issue in passing 0 for non-relevant chains
@@ -610,7 +618,7 @@ export const provideHandleTransaction =
           if (withdrawFound || withdrawToRecipient) {
             const anomalyScore = await calculateAlertRate(
               Number(chainId),
-              BOT_ID,
+              botId,
               "NIP-5",
               isRelevantChain
                 ? ScanCountType.CustomScanCount
@@ -636,7 +644,7 @@ export const provideHandleTransaction =
           if (hasCodeWithoutPrefix) {
             const anomalyScore = await calculateAlertRate(
               Number(chainId),
-              BOT_ID,
+              botId,
               "NIP-5",
               isRelevantChain
                 ? ScanCountType.CustomScanCount
@@ -688,7 +696,7 @@ export const provideHandleTransaction =
           ) {
             const anomalyScore = await calculateAlertRate(
               Number(chainId),
-              BOT_ID,
+              botId,
               "NIP-8",
               isRelevantChain
                 ? ScanCountType.CustomScanCount
@@ -706,7 +714,7 @@ export const provideHandleTransaction =
           } else {
             const anomalyScore = await calculateAlertRate(
               Number(chainId),
-              BOT_ID,
+              botId,
               "NIP-TEST",
               isRelevantChain
                 ? ScanCountType.CustomScanCount
@@ -906,7 +914,7 @@ export const provideHandleTransaction =
                         ) {
                           const anomalyScore = await calculateAlertRate(
                             Number(chainId),
-                            BOT_ID,
+                            botId,
                             "NIP-4",
                             isRelevantChain
                               ? ScanCountType.CustomScanCount
@@ -975,7 +983,7 @@ export const provideHandleTransaction =
             if (value === "0x0" || (!isValueRound && isValueUnique)) {
               const anomalyScore = await calculateAlertRate(
                 Number(chainId),
-                BOT_ID,
+                botId,
                 alertId,
                 isRelevantChain
                   ? ScanCountType.CustomScanCount
@@ -1018,7 +1026,7 @@ export const provideHandleTransaction =
 
               const anomalyScore = await calculateAlertRate(
                 Number(chainId),
-                BOT_ID,
+                botId,
                 "NIP-3",
                 isRelevantChain
                   ? ScanCountType.CustomScanCount
@@ -1060,7 +1068,7 @@ export const provideHandleTransaction =
 
             const anomalyScore = await calculateAlertRate(
               Number(chainId),
-              BOT_ID,
+              botId,
               "NIP-3",
               isRelevantChain
                 ? ScanCountType.CustomScanCount
@@ -1096,6 +1104,11 @@ export const provideHandleBlock =
   ): HandleBlock => {
     return async (blockEvent: BlockEvent, provider: ethers.JsonRpcProvider) => {
       dataFetcher.setProvider(provider);
+
+      const jwt = await fetchJwt({ key: "value" }, new Date(Date.now() + 5000));
+      const decodedTokenData = decodeJwt(jwt);
+      const botId = decodedTokenData.payload['bot-id'];
+
       const findings: Finding[] = [];
 
       let { nativeTransfers, alertedAddresses, alertedAddressesCritical } =
@@ -1238,7 +1251,7 @@ export const provideHandleBlock =
         );
 
         const query: AlertQueryOptions = {
-          botIds: [BOT_ID],
+          botIds: [botId],
           alertId: "NIP-7",
           chainId,
           blockNumberRange: {
@@ -1293,7 +1306,7 @@ export const provideHandleBlock =
           if (!haveInteractedAgain) {
             const anomalyScore = await calculateAlertRate(
               Number(chainId),
-              BOT_ID,
+              botId,
               "NIP-7",
               isRelevantChain
                 ? ScanCountType.CustomScanCount

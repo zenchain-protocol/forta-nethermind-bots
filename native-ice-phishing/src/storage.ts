@@ -16,7 +16,7 @@ export type apiKeys = {
       fantomscanApiKeys: string[];
       arbiscanApiKeys: string[];
       snowtraceApiKeys: string[];
-      zenchainApiKeys: string[];
+      zentraceApiKeys: string[];
     };
   };
   generalApiKeys: {
@@ -70,7 +70,7 @@ export const getApiKeys = async (): Promise<apiKeys> => {
       'FANTOMSCAN_API_KEYS',
       'ARBISCAN_API_KEYS',
       'SNOWTRACE_API_KEYS',
-      'ZENCHAIN_API_KEY',
+      'ZENTRACE_API_KEY',
       'ETHERSCAN_METADATA_TOKEN',
       'ZETTABLOCK_API_KEY'
     ];
@@ -90,7 +90,7 @@ export const getApiKeys = async (): Promise<apiKeys> => {
       fantomscanApiKeys,
       arbiscanApiKeys,
       snowtraceApiKeys,
-      zenchainApiKeys,
+      zentraceApiKeys,
       ETHERSCAN_METADATA_TOKEN,
       ZETTABLOCK
     ] = results;
@@ -105,7 +105,7 @@ export const getApiKeys = async (): Promise<apiKeys> => {
           fantomscanApiKeys: fantomscanApiKeys ?? [],
           arbiscanApiKeys: arbiscanApiKeys ?? [],
           snowtraceApiKeys: snowtraceApiKeys ?? [],
-          zenchainApiKeys: zenchainApiKeys ?? []
+          zentraceApiKeys: zentraceApiKeys ?? []
         }
       },
       generalApiKeys: {

@@ -85,12 +85,13 @@ services:
       dockerfile: Dockerfile
     container_name: native-ice-phishing-detection-bot
     environment:
-      ZENTRACE_ENDPOINT: https://eth.blockscout.com #https://arbitrary.blockscout.com
+      ZENTRACE_ENDPOINT: https://zentrace.io #https://arbitrary.blockscout.com
       CHAIN_ID: 8408 #1 for Ethereum
       EVM_RPC: http://alice:9944/ #https://cloudflare-eth.com for Ethereum 
       LOCAL_NODE: true
       NODE_ENV: development # or production, depending on what you want to test
       STORAGE_API_URL: http://api:8080
+      BOT_ID: 1
     ports:
       - "3000:3000"
     depends_on:
@@ -106,12 +107,13 @@ services:
       dockerfile: Dockerfile.test
     container_name: test-runner
     environment:
-      ZENTRACE_ENDPOINT: https://eth.blockscout.com #https://arbitrary.blockscout.com
+      ZENTRACE_ENDPOINT: https://zentrace.io #https://arbitrary.blockscout.com
       CHAIN_ID: 8408 #1 for Ethereum
       EVM_RPC: http://alice:9944/ #https://cloudflare-eth.com for Ethereum 
       LOCAL_NODE: true
       NODE_ENV: development # or production, depending on what you want to test
       STORAGE_API_URL: http://api:8080
+      BOT_ID: 1
     depends_on:
       - native-ice-phishing-detection-bot
     command: ["npm", "run", "test"]

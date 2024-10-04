@@ -48,7 +48,7 @@ export default class DataFetcher {
       250: this.apiKeys.apiKeys.nativeIcePhishing.fantomscanApiKeys,
       42161: this.apiKeys.apiKeys.nativeIcePhishing.arbiscanApiKeys,
       43114: this.apiKeys.apiKeys.nativeIcePhishing.snowtraceApiKeys,
-      8408: this.apiKeys.apiKeys.nativeIcePhishing.zenchainApiKeys,
+      8408: this.apiKeys.apiKeys.nativeIcePhishing.zentraceApiKeys,
     };
 
     const selectedApiKeys = apiKeysMap[chainId];
