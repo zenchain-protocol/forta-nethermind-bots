@@ -55,3 +55,8 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:v${{ steps.parse_version.outputs.version }}
+          build-args: |
+            CHAIN_ID=${{ secrets.CHAIN_ID }}
+            EVM_RPC=${{ secrets.EVM_RPC }}
+            STORAGE_API_URL=${{ secrets.STORAGE_API_URL }}
+            NODE_ENV=production
