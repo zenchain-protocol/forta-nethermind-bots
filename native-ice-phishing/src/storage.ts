@@ -63,13 +63,13 @@ export const getApiKeys = async (): Promise<apiKeys> => {
 
   try {
     const keys = [
-      'ETHERSCAN_API_KEYS',
-      'OPTIMISTIC_ETHERSCAN_API_KEYS',
-      'BSCSCAN_API_KEYS',
-      'POLYGONSCAN_API_KEYS',
-      'FANTOMSCAN_API_KEYS',
-      'ARBISCAN_API_KEYS',
-      'SNOWTRACE_API_KEYS',
+      'ETHERSCAN_API_KEY',
+      'OPTIMISTICSCAN_API_KEY',
+      'BSCSCAN_API_KEY',
+      'POLYGONSCAN_API_KEY',
+      'FANTOMSCAN_API_KEY',
+      'ARBISCAN_API_KEY',
+      'SNOWTRACE_API_KEY',
       'ZENTRACE_API_KEY',
       'ETHERSCAN_METADATA_TOKEN',
       'ZETTABLOCK_API_KEY'
