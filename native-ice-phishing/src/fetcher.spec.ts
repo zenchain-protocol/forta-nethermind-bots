@@ -31,7 +31,7 @@ const testKeys: apiKeys = {
       fantomscanApiKeys: ["Test8"],
       arbiscanApiKeys: ["Test9"],
       snowtraceApiKeys: ["Test10"],
-      zenchainApiKeys: ["Test11"]
+      zentraceApiKeys: ["Test11"]
     },
   },
   generalApiKeys: {
