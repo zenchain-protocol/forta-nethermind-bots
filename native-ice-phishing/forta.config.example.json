@@ -1,3 +1,4 @@
 {
-  "fortaApiKey": "replace with API key from: https://docs.forta.network/en/latest/api-keys/"
+  "botId":"0x18395e4e367ac0dabb05f1cf74082fa1348cb248e631f1e2f4fb737247b6def7",
+  "fortaApiKey": ""
 }
