@@ -1,5 +1,3 @@
-Sure, here is the modified README to clarify that only the Native Ice Phishing Detection Bot is being used at the moment:
-
 # Forta-Agents
 
 Forta Agents proof of concepts from **Venice** team.
