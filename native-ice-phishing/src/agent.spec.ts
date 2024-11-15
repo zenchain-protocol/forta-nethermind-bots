@@ -10,10 +10,7 @@ import {
   Label,
   LogDescription,
   TransactionEvent,
-  createTransactionEvent,
   ethers,
-  getAlerts,
-  getProvider,
 } from "@fortanetwork/forta-bot";
 import {
   TestTransactionEvent,
@@ -25,13 +22,10 @@ import {
   provideInitialize,
   provideHandleTransaction,
   provideHandleBlock,
-  createNewDataFetcher,
 } from "./agent";
 import { when } from "jest-when";
-import calculateAlertRate, { ScanCountType } from "bot-alert-rate";
-import { Data, Transfer, WITHDRAW_SIG } from "./utils";
+import { Data, Transfer } from "./utils";
 import DataFetcher from "./fetcher";
-import { PersistenceHelper } from "./persistence.helper";
 import { TransactionDescription } from "@fortanetwork/forta-bot/dist/transactions";
 
 jest.setTimeout(400000);
@@ -208,42 +202,6 @@ const testCreateHighSeverityFinding = (
     metadata,
     labels,
     uniqueKey,
-  });
-};
-
-const testCreateCriticalSeverityFinding = (
-  txHash: string,
-  attacker: string,
-  address: string,
-  anomalyScore: number
-): Finding => {
-  return Finding.fromObject({
-    name: "Contract deployed with characteristics indicative of a potential native ice phishing attack",
-    description: `${attacker} created contract with address ${address} to be possibly used in a native ice phishing attack`,
-    alertId: "NIP-5",
-    severity: FindingSeverity.Critical,
-    type: FindingType.Suspicious,
-    metadata: {
-      attacker,
-      address,
-      anomalyScore: anomalyScore.toString(),
-    },
-    labels: [
-      Label.fromObject({
-        entity: txHash,
-        entityType: EntityType.Transaction,
-        label: "Attack",
-        confidence: 0.9,
-        remove: false,
-      }),
-      Label.fromObject({
-        entity: attacker,
-        entityType: EntityType.Address,
-        label: "Attacker",
-        confidence: 0.9,
-        remove: false,
-      }),
-    ],
   });
 };
 
@@ -1487,6 +1445,20 @@ describe("Native Ice Phishing Bot test suite", () => {
   //     .calledWith(mockContractAddress)
   //     .mockReturnValueOnce("0xccc");
   //   when(mockFetcher.getEvents).calledWith("0xccc").mockReturnValueOnce([]);
+  // it("should return a finding if there's a withdrawal from the owner of a contract used for native ice phishing attack", async () => {
+  //   mockFetcher.getTransactions.mockReturnValueOnce([
+  //     { hash: "hash15" },
+  //     { hash: "hash25" },
+  //   ]);
+  //   const tx: TestTransactionEvent = new TestTransactionEvent()
+  //     .setFrom(createAddress("0x0f"))
+  //     .setTo(createAddress("0x01"))
+  //     .setData(
+  //       "0x00f714ce00000000000000000000000000000000000000000000000000128ed4154bf6b9000000000000000000000000bca7af384bc384f86d78e37516537b3fecb86bbc"
+  //     )
+  //     .setBlock(234)
+  //     .setValue("0x0")
+  //     .setHash("0xabcd");
 
   //   when(mockFetcher.getSourceCode)
   //     .calledWith(mockContractAddress, 1)
@@ -1524,6 +1496,9 @@ describe("Native Ice Phishing Bot test suite", () => {
   //     .calledWith(mockContractAddress)
   //     .mockReturnValueOnce("0xccc");
   //   when(mockFetcher.getEvents).calledWith("0xccc").mockReturnValueOnce([]);
+    // when(mockFetcher.hasValidEntries)
+    //   .calledWith(createAddress("0x0f"), createAddress("0x01"), 1, "0xabcd")
+    //   .mockResolvedValueOnce(true);
 
   //   const sourceCode = `function random() payable {}
   //   function withdraw() {
