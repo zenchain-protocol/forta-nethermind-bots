@@ -6,7 +6,9 @@ Forta Agents proof of concepts from **Venice** team.
 
 - **Native Ice Phishing Detection Bot**: The bot detects and analyzes specific transaction patterns associated with potential native ice phishing attacks. Its primary focus lies in monitoring transactions where the receiver is either an externally-owned account (EOA) or a suspicious contract, coupled with the input data being the hash of a known function signature. Additionally, the bot keeps a watchful eye on instances where suspicious EOAs receive native tokens from multiple different EOAs surpassing a predetermined threshold, as well as cases where contracts are deployed with attributes indicative of a potential native ice phishing attack.
 
-## Other Agents (Not in Use)
+## Other Agents
+
+These agents are not currently in use but can be found in [the base repository](https://github.com/NethermindEth/Forta-Agents).
 
 - **Multi Gas Threshold**: Detect unusual amount of gas used.
 - **Anomalous Tx Value**: Detect transactions using very high tx value.
